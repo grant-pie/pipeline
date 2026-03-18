@@ -20,6 +20,7 @@ let MailService = class MailService {
     }
     async sendPasswordReset(email, token) {
         const appUrl = this.config.get('APP_URL', 'http://localhost:5173');
+        console.log('[MailService] APP_URL:', appUrl);
         const resetUrl = `${appUrl}/reset-password?token=${token}`;
         const { error } = await this.resend.emails.send({
             from: process.env.MAIL_FROM || 'onboarding@resend.dev',

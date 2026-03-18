@@ -12,6 +12,7 @@ export class MailService {
 
   async sendPasswordReset(email: string, token: string): Promise<void> {
     const appUrl = this.config.get('APP_URL', 'http://localhost:5173');
+    console.log('[MailService] APP_URL:', appUrl);
     const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
     const { error } = await this.resend.emails.send({
