@@ -5,16 +5,22 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MailService = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const resend_1 = require("resend");
 let MailService = class MailService {
-    constructor() {
-        this.resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+    constructor(config) {
+        this.config = config;
+        this.resend = new resend_1.Resend(this.config.get('RESEND_API_KEY'));
     }
     async sendPasswordReset(email, token) {
-        const resetUrl = `${process.env.APP_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+        const appUrl = this.config.get('APP_URL', 'http://localhost:5173');
+        const resetUrl = `${appUrl}/reset-password?token=${token}`;
         const { error } = await this.resend.emails.send({
             from: process.env.MAIL_FROM || 'onboarding@resend.dev',
             to: email,
@@ -46,6 +52,7 @@ let MailService = class MailService {
 };
 exports.MailService = MailService;
 exports.MailService = MailService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [config_1.ConfigService])
 ], MailService);
 //# sourceMappingURL=mail.service.js.map

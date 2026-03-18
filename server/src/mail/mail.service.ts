@@ -1,12 +1,18 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
-  private resend = new Resend(process.env.RESEND_API_KEY);
+  private resend: Resend;
+
+  constructor(private readonly config: ConfigService) {
+    this.resend = new Resend(this.config.get('RESEND_API_KEY'));
+  }
 
   async sendPasswordReset(email: string, token: string): Promise<void> {
-    const resetUrl = `${process.env.APP_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+    const appUrl = this.config.get('APP_URL', 'http://localhost:5173');
+    const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
     const { error } = await this.resend.emails.send({
       from: process.env.MAIL_FROM || 'onboarding@resend.dev',
