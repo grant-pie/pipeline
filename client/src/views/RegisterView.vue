@@ -1,0 +1,136 @@
+<template>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <RouterLink to="/login" class="back-link">← Back to sign in</RouterLink>
+        <h1 class="auth-logo">Pipeline</h1>
+        <p class="auth-sub">Create your account</p>
+      </div>
+
+      <form @submit.prevent="handleSubmit">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            v-model="form.email"
+            type="email"
+            placeholder="you@example.com"
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            v-model="form.password"
+            type="password"
+            placeholder="Min. 8 characters"
+            required
+            autocomplete="new-password"
+            minlength="8"
+          />
+        </div>
+
+        <p v-if="error" class="error-msg">{{ error }}</p>
+
+        <button type="submit" class="btn-primary submit-btn" :disabled="loading">
+          {{ loading ? 'Creating account…' : 'Create account' }}
+        </button>
+      </form>
+
+      <p class="auth-footer">
+        Have an account? <RouterLink to="/login">Sign in</RouterLink>
+      </p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+const form = reactive({ email: '', password: '' });
+const loading = ref(false);
+const error = ref('');
+
+async function handleSubmit() {
+  loading.value = true;
+  error.value = '';
+  try {
+    await authStore.register(form.email, form.password);
+    router.push({ name: 'dashboard' });
+  } catch (e) {
+    error.value = (e as Error).message || 'Registration failed';
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+
+<style scoped>
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+}
+
+.auth-header {
+  margin-bottom: 28px;
+}
+
+.back-link {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.auth-logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.auth-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.auth-footer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 20px;
+}
+</style>
