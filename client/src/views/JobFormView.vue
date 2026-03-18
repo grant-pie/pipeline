@@ -66,8 +66,8 @@
         <input
           id="link"
           v-model="form.link"
-          type="url"
-          placeholder="https://..."
+          type="text"
+          placeholder="google.com or https://google.com"
         />
       </div>
 
@@ -147,12 +147,17 @@ async function handleSubmit() {
   loading.value = true;
   error.value = '';
   try {
+    const rawLink = form.link.trim();
+    const normalizedLink = rawLink && !/^https?:\/\//i.test(rawLink)
+      ? `https://${rawLink}`
+      : rawLink;
+
     const payload = {
       company: form.company,
       title: form.title,
       dateApplied: form.dateApplied,
       status: form.status,
-      link: form.link || undefined,
+      link: normalizedLink || undefined,
       notes: form.notes || undefined,
     };
 
