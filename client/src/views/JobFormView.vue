@@ -103,6 +103,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useJobsStore } from '@/stores/jobs';
 import { jobsApi } from '@/api/jobs';
+import { normalizeUrl } from '@/utils/normalizeUrl';
 import type { JobStatus } from '@/types';
 
 const router = useRouter();
@@ -151,10 +152,7 @@ async function handleSubmit() {
   loading.value = true;
   error.value = '';
   try {
-    const rawLink = form.link.trim();
-    const normalizedLink = rawLink && !/^https?:\/\//i.test(rawLink)
-      ? `https://${rawLink}`
-      : rawLink;
+    const normalizedLink = normalizeUrl(form.link);
 
     const payload = {
       company: form.company,
