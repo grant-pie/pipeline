@@ -105,5 +105,6 @@ describe('LoginView', () => {
     await flushPromises();
 
     expect(wrapper.find('.resend-btn').exists()).toBe(true);
+    expect(wrapper.find('.resend-btn').attributes('type')).toBe('button');
   });
 });

@@ -38,7 +38,7 @@
 
         <p v-if="error" class="error-msg">{{ error }}</p>
         <p v-if="showResend" class="resend-msg">
-          <button class="resend-btn" :disabled="resendLoading" @click="handleResend">
+          <button type="button" class="resend-btn" :disabled="resendLoading" @click="handleResend">
             {{ resendLoading ? 'Sending…' : 'Resend verification email' }}
           </button>
         </p>

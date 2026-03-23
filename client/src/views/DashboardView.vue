@@ -33,6 +33,7 @@
 
     <!-- Job list -->
     <div v-else class="job-list">
+      <p v-if="deleteError" class="state-msg error-msg">{{ deleteError }}</p>
       <JobCard
         v-for="job in filteredJobs"
         :key="job.id"
@@ -60,6 +61,7 @@ const statuses: { value: JobStatus | 'all'; label: string }[] = [
 ];
 
 const activeFilter = ref<JobStatus | 'all'>('all');
+const deleteError = ref('');
 
 const filteredJobs = computed(() =>
   activeFilter.value === 'all'
@@ -75,7 +77,12 @@ function countByStatus(status: JobStatus | 'all'): number {
 
 async function handleDelete(id: string) {
   if (!confirm('Delete this application?')) return;
-  await jobsStore.deleteJob(id);
+  deleteError.value = '';
+  try {
+    await jobsStore.deleteJob(id);
+  } catch (e) {
+    deleteError.value = (e as Error).message || 'Failed to delete application.';
+  }
 }
 
 onMounted(() => jobsStore.fetchJobs());

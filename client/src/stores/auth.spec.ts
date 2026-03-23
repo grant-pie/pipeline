@@ -27,6 +27,16 @@ describe('useAuthStore', () => {
     expect(store.user).toBeNull();
   });
 
+  it('does not crash when stored user JSON is malformed', () => {
+    localStorage.setItem('token', 'bad-token');
+    localStorage.setItem('user', '{bad json');
+
+    const store = useAuthStore();
+    expect(store.token).toBe('bad-token');
+    expect(store.user).toBeNull();
+    expect(localStorage.getItem('user')).toBeNull();
+  });
+
   it('sets token and user after login', async () => {
     const store = useAuthStore();
     await store.login('test@test.com', 'password123');

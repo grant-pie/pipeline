@@ -32,17 +32,10 @@
 
 <script setup lang="ts">
 import type { JobApplication } from '@/types';
+import { formatDate } from '@/utils/formatDate';
 
 defineProps<{ job: JobApplication }>();
 defineEmits<{ delete: [id: string] }>();
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
 </script>
 
 <style scoped>

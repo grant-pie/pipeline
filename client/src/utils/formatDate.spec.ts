@@ -11,4 +11,9 @@ describe('formatDate', () => {
     const result = formatDate('2026-12-01');
     expect(result).toBe('Dec 1, 2026');
   });
+
+  it('keeps date-only strings stable across timezones', () => {
+    const result = formatDate('2026-01-01');
+    expect(result).toBe('Jan 1, 2026');
+  });
 });

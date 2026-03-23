@@ -3,11 +3,20 @@ import { ref, computed } from 'vue';
 import { authApi } from '@/api/auth';
 import type { User } from '@/types';
 
+function readStoredUser(): User | null {
+  const stored = localStorage.getItem('user');
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored) as User;
+  } catch {
+    localStorage.removeItem('user');
+    return null;
+  }
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'));
-  const user = ref<User | null>(
-    JSON.parse(localStorage.getItem('user') || 'null'),
-  );
+  const user = ref<User | null>(readStoredUser());
 
   const isAuthenticated = computed(() => !!token.value);
 
@@ -38,5 +47,5 @@ export const useAuthStore = defineStore('auth', () => {
     clearAuth();
   }
 
-  return { token, user, isAuthenticated, login, register, logout };
+  return { token, user, isAuthenticated, login, register, logout, clearAuth };
 });
