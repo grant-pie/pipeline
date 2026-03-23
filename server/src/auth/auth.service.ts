@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -29,13 +30,11 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = await this.usersService.create(dto.email, hashedPassword);
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const user = await this.usersService.create(dto.email, hashedPassword, verificationToken);
+    await this.mailService.sendVerificationEmail(user.email, verificationToken);
 
-    return {
-      accessToken: token,
-      user: { id: user.id, email: user.email, createdAt: user.createdAt },
-    };
+    return { message: 'Account created. Please check your email to verify your account.' };
   }
 
   async login(dto: LoginDto) {
@@ -49,12 +48,35 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (!user.isVerified) {
+      throw new ForbiddenException('Please verify your email before signing in.');
+    }
+
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
 
     return {
       accessToken: token,
       user: { id: user.id, email: user.email, createdAt: user.createdAt },
     };
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.usersService.findByVerificationToken(token);
+    if (!user) {
+      throw new BadRequestException('Invalid or expired verification link.');
+    }
+    await this.usersService.verifyUser(user.id);
+    return { message: 'Email verified. You can now sign in.' };
+  }
+
+  async resendVerification(email: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (user && !user.isVerified) {
+      const token = crypto.randomBytes(32).toString('hex');
+      await this.usersService.setVerificationToken(user.id, token);
+      await this.mailService.sendVerificationEmail(user.email, token);
+    }
+    return { message: 'If that email is registered and unverified, a new link has been sent.' };
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {

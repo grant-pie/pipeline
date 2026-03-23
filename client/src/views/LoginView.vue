@@ -37,6 +37,11 @@
         </div>
 
         <p v-if="error" class="error-msg">{{ error }}</p>
+        <p v-if="showResend" class="resend-msg">
+          <button class="resend-btn" :disabled="resendLoading" @click="handleResend">
+            {{ resendLoading ? 'Sending…' : 'Resend verification email' }}
+          </button>
+        </p>
 
         <button type="submit" class="btn-primary submit-btn" :disabled="loading">
           {{ loading ? 'Signing in…' : 'Sign in' }}
@@ -54,6 +59,7 @@
 import { ref, reactive, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { authApi } from '@/api/auth';
 
 const router = useRouter();
 const route = useRoute();
@@ -64,17 +70,37 @@ const sessionExpired = computed(() => route.query.reason === 'expired');
 const form = reactive({ email: '', password: '' });
 const loading = ref(false);
 const error = ref('');
+const showResend = ref(false);
+const resendLoading = ref(false);
 
 async function handleSubmit() {
   loading.value = true;
   error.value = '';
+  showResend.value = false;
   try {
     await authStore.login(form.email, form.password);
     router.push({ name: 'dashboard' });
   } catch (e) {
-    error.value = (e as Error).message || 'Invalid credentials';
+    const msg = (e as Error).message || 'Invalid credentials';
+    error.value = msg;
+    if (msg.toLowerCase().includes('verify your email')) {
+      showResend.value = true;
+    }
   } finally {
     loading.value = false;
+  }
+}
+
+async function handleResend() {
+  resendLoading.value = true;
+  try {
+    await authApi.resendVerification(form.email);
+    error.value = 'Verification email sent. Please check your inbox.';
+    showResend.value = false;
+  } catch {
+    error.value = 'Failed to resend. Please try again.';
+  } finally {
+    resendLoading.value = false;
   }
 }
 </script>
@@ -155,5 +181,23 @@ async function handleSubmit() {
   font-size: 13px;
   color: var(--text-muted);
   margin-top: 20px;
+}
+
+.resend-msg {
+  margin-top: 6px;
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.resend-btn:hover {
+  color: var(--accent-hover);
 }
 </style>

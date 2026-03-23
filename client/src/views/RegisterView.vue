@@ -7,7 +7,16 @@
         <p class="auth-sub">Create your account</p>
       </div>
 
-      <form @submit.prevent="handleSubmit">
+      <div v-if="submitted" class="success-state">
+        <p class="success-title">Check your inbox</p>
+        <p class="success-sub">
+          We've sent a verification link to <strong>{{ submittedEmail }}</strong>.
+          Click the link in the email to activate your account.
+        </p>
+        <RouterLink to="/login" class="btn-ghost btn-sm back-btn">Back to sign in</RouterLink>
+      </div>
+
+      <form v-else @submit.prevent="handleSubmit">
         <div class="form-group">
           <label for="email">Email</label>
           <input
@@ -73,6 +82,8 @@ const authStore = useAuthStore();
 const form = reactive({ email: '', password: '', confirm: '' });
 const loading = ref(false);
 const error = ref('');
+const submitted = ref(false);
+const submittedEmail = ref('');
 
 async function handleSubmit() {
   if (form.password !== form.confirm) {
@@ -83,7 +94,8 @@ async function handleSubmit() {
   error.value = '';
   try {
     await authStore.register(form.email, form.password);
-    router.push({ name: 'dashboard' });
+    submittedEmail.value = form.email;
+    submitted.value = true;
   } catch (e) {
     error.value = (e as Error).message || 'Registration failed';
   } finally {
@@ -151,5 +163,32 @@ async function handleSubmit() {
   font-size: 13px;
   color: var(--text-muted);
   margin-top: 20px;
+}
+
+.success-state {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.success-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.success-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+
+.back-btn {
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.back-btn:hover {
+  text-decoration: none;
 }
 </style>
