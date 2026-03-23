@@ -30,6 +30,21 @@
             required
             autocomplete="new-password"
             minlength="8"
+            maxlength="128"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="confirm">Confirm password</label>
+          <input
+            id="confirm"
+            v-model="form.confirm"
+            type="password"
+            placeholder="Repeat your password"
+            required
+            autocomplete="new-password"
+            minlength="8"
+            maxlength="128"
           />
         </div>
 
@@ -55,11 +70,15 @@ import { useAuthStore } from '@/stores/auth';
 const router = useRouter();
 const authStore = useAuthStore();
 
-const form = reactive({ email: '', password: '' });
+const form = reactive({ email: '', password: '', confirm: '' });
 const loading = ref(false);
 const error = ref('');
 
 async function handleSubmit() {
+  if (form.password !== form.confirm) {
+    error.value = 'Passwords do not match.';
+    return;
+  }
   loading.value = true;
   error.value = '';
   try {

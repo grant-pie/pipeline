@@ -46,6 +46,8 @@
               placeholder="Repeat your password"
               required
               autocomplete="new-password"
+              minlength="8"
+              maxlength="128"
             />
           </div>
 

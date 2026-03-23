@@ -24,6 +24,7 @@
             type="text"
             placeholder="Acme Corp"
             required
+            maxlength="100"
           />
         </div>
 
@@ -35,6 +36,7 @@
             type="text"
             placeholder="Software Engineer"
             required
+            maxlength="100"
           />
         </div>
       </div>
@@ -68,6 +70,7 @@
           v-model="form.link"
           type="text"
           placeholder="google.com or https://google.com"
+          maxlength="500"
         />
       </div>
 
@@ -78,6 +81,7 @@
           v-model="form.notes"
           placeholder="Interview notes, contacts, follow-up dates…"
           rows="4"
+          maxlength="2000"
         />
       </div>
 
