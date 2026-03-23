@@ -16,11 +16,14 @@ class ResetPasswordDto {
 exports.ResetPasswordDto = ResetPasswordDto;
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], ResetPasswordDto.prototype, "token", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.MinLength)(8),
+    (0, class_validator_1.MaxLength)(128),
     __metadata("design:type", String)
 ], ResetPasswordDto.prototype, "password", void 0);
 //# sourceMappingURL=reset-password.dto.js.map

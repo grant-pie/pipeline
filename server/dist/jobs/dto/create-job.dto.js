@@ -19,12 +19,14 @@ __decorate([
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)({ message: 'Company name cannot be empty' }),
+    (0, class_validator_1.MaxLength)(100),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "company", void 0);
 __decorate([
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)({ message: 'Job title cannot be empty' }),
+    (0, class_validator_1.MaxLength)(100),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "title", void 0);
 __decorate([
@@ -39,11 +41,13 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim() || undefined),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(2000),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "notes", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsUrl)({ require_protocol: false }),
+    (0, class_validator_1.MaxLength)(500),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "link", void 0);
 //# sourceMappingURL=create-job.dto.js.map
