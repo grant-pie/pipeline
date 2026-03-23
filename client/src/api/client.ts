@@ -23,7 +23,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     },
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && !endpoint.startsWith('/auth')) {
     handleExpiredSession();
     throw new Error('Session expired. Please sign in again.');
   }
