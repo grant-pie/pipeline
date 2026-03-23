@@ -16,6 +16,7 @@ const auth_controller_1 = require("./auth.controller");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
 const users_module_1 = require("../users/users.module");
 const mail_module_1 = require("../mail/mail.module");
+const jwt_secret_util_1 = require("./jwt-secret.util");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -29,7 +30,7 @@ exports.AuthModule = AuthModule = __decorate([
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
                 useFactory: (config) => ({
-                    secret: config.get('JWT_SECRET', 'secret'),
+                    secret: (0, jwt_secret_util_1.getJwtSecret)(config),
                     signOptions: {
                         expiresIn: config.get('JWT_EXPIRES_IN', '7d'),
                     },

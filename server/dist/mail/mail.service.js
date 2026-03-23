@@ -18,11 +18,40 @@ let MailService = class MailService {
         this.config = config;
         this.resend = new resend_1.Resend(this.config.get('RESEND_API_KEY'));
     }
+    async sendVerificationEmail(email, token) {
+        const appUrl = this.config.get('APP_URL', 'http://localhost:5173');
+        const verifyUrl = `${appUrl}/verify-email?token=${token}`;
+        const { error } = await this.resend.emails.send({
+            from: this.config.get('MAIL_FROM', 'onboarding@resend.dev'),
+            to: email,
+            subject: 'Verify your Pipeline account',
+            html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+          <h2 style="margin-bottom: 8px;">Verify your email</h2>
+          <p style="color: #888; margin-bottom: 24px;">
+            Thanks for signing up for Pipeline. Click the button below to verify your email address.
+          </p>
+          <a href="${verifyUrl}"
+            style="display: inline-block; background: #5b8af0; color: #fff;
+                   padding: 10px 20px; border-radius: 6px; text-decoration: none;
+                   font-weight: 500;">
+            Verify email
+          </a>
+          <p style="color: #888; font-size: 13px; margin-top: 24px;">
+            If you didn't create an account, you can safely ignore this email.
+          </p>
+        </div>
+      `,
+        });
+        if (error) {
+            throw new common_1.InternalServerErrorException('Failed to send verification email.');
+        }
+    }
     async sendPasswordReset(email, token) {
         const appUrl = this.config.get('APP_URL', 'http://localhost:5173');
         const resetUrl = `${appUrl}/reset-password?token=${token}`;
         const { error } = await this.resend.emails.send({
-            from: process.env.MAIL_FROM || 'onboarding@resend.dev',
+            from: this.config.get('MAIL_FROM', 'onboarding@resend.dev'),
             to: email,
             subject: 'Reset your Pipeline password',
             html: `

@@ -15,6 +15,10 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -31,7 +35,11 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const user = await this.usersService.create(dto.email, hashedPassword, verificationToken);
+    const user = await this.usersService.create(
+      dto.email,
+      hashedPassword,
+      hashToken(verificationToken),
+    );
     await this.mailService.sendVerificationEmail(user.email, verificationToken);
 
     return { message: 'Account created. Please check your email to verify your account.' };
@@ -61,7 +69,7 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    const user = await this.usersService.findByVerificationToken(token);
+    const user = await this.usersService.findByVerificationToken(hashToken(token));
     if (!user) {
       throw new BadRequestException('Invalid or expired verification link.');
     }
@@ -73,7 +81,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     if (user && !user.isVerified) {
       const token = crypto.randomBytes(32).toString('hex');
-      await this.usersService.setVerificationToken(user.id, token);
+      await this.usersService.setVerificationToken(user.id, hashToken(token));
       await this.mailService.sendVerificationEmail(user.email, token);
     }
     return { message: 'If that email is registered and unverified, a new link has been sent.' };
@@ -86,7 +94,7 @@ export class AuthService {
     if (user) {
       const token = crypto.randomBytes(32).toString('hex');
       const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-      await this.usersService.setResetToken(user.id, token, expiry);
+      await this.usersService.setResetToken(user.id, hashToken(token), expiry);
       await this.mailService.sendPasswordReset(user.email, token);
     }
 
@@ -94,7 +102,7 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const user = await this.usersService.findByResetToken(dto.token);
+    const user = await this.usersService.findByResetToken(hashToken(dto.token));
 
     if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
       throw new BadRequestException('Invalid or expired reset link.');

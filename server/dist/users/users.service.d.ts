@@ -5,7 +5,10 @@ export declare class UsersService {
     constructor(usersRepository: Repository<User>);
     findByEmail(email: string): Promise<User | null>;
     findById(id: string): Promise<User | null>;
-    create(email: string, hashedPassword: string): Promise<User>;
+    create(email: string, hashedPassword: string, verificationToken: string): Promise<User>;
+    findByVerificationToken(token: string): Promise<User | null>;
+    verifyUser(id: string): Promise<void>;
+    setVerificationToken(id: string, token: string): Promise<void>;
     findByResetToken(token: string): Promise<User | null>;
     setResetToken(id: string, token: string, expiry: Date): Promise<void>;
     updatePassword(id: string, hashedPassword: string): Promise<void>;

@@ -27,9 +27,18 @@ let UsersService = class UsersService {
     async findById(id) {
         return this.usersRepository.findOne({ where: { id } });
     }
-    async create(email, hashedPassword) {
-        const user = this.usersRepository.create({ email, password: hashedPassword });
+    async create(email, hashedPassword, verificationToken) {
+        const user = this.usersRepository.create({ email, password: hashedPassword, verificationToken, isVerified: false });
         return this.usersRepository.save(user);
+    }
+    async findByVerificationToken(token) {
+        return this.usersRepository.findOne({ where: { verificationToken: token } });
+    }
+    async verifyUser(id) {
+        await this.usersRepository.update(id, { isVerified: true, verificationToken: null });
+    }
+    async setVerificationToken(id, token) {
+        await this.usersRepository.update(id, { verificationToken: token });
     }
     async findByResetToken(token) {
         return this.usersRepository.findOne({ where: { resetToken: token } });
