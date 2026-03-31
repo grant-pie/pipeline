@@ -54,10 +54,12 @@
             autocomplete="new-password"
             minlength="8"
             maxlength="128"
+            @input="checkPasswordMatch"
           />
         </div>
 
-        <p v-if="error" class="error-msg">{{ error }}</p>
+        <p v-if="passwordMatchError" class="error-msg">{{ passwordMatchError }}</p>
+        <p v-else-if="error" class="error-msg">{{ error }}</p>
 
         <button type="submit" class="btn-primary submit-btn" :disabled="loading">
           {{ loading ? 'Creating account…' : 'Create account' }}
@@ -82,12 +84,26 @@ const authStore = useAuthStore();
 const form = reactive({ email: '', password: '', confirm: '' });
 const loading = ref(false);
 const error = ref('');
+const passwordMatchError = ref('');
 const submitted = ref(false);
 const submittedEmail = ref('');
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function checkPasswordMatch() {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    if (form.confirm && form.password !== form.confirm) {
+      passwordMatchError.value = 'Passwords do not match.';
+    } else {
+      passwordMatchError.value = '';
+    }
+  }, 300);
+}
+
 async function handleSubmit() {
   if (form.password !== form.confirm) {
-    error.value = 'Passwords do not match.';
+    passwordMatchError.value = 'Passwords do not match.';
     return;
   }
   loading.value = true;

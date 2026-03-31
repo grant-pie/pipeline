@@ -4,5 +4,12 @@
     "@vue/test-utils": "^2.4.6",
     "jsdom": "^29.0.1",
     "vitest": "^4.1.1"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
   }
+
 }

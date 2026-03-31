@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(grep -E \"\\(package\\\\.json|\\\\.ts$\\)\")",
+      "Bash(find /c/Users/grant/Workspaces/pipeline/server -name *.spec.ts -o -name *.test.ts)",
+      "Bash(ls -la /c/Users/grant/Workspaces/pipeline/server/*.json)",
+      "Bash(npm test:*)"
     ]
   }
 }
