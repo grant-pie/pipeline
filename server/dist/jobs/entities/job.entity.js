@@ -9,9 +9,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Job = void 0;
+exports.Job = exports.JOB_STATUSES = void 0;
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../../users/entities/user.entity");
+exports.JOB_STATUSES = ['applied', 'interviewing', 'offered', 'rejected'];
 let Job = class Job {
 };
 exports.Job = Job;
@@ -34,7 +35,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',
-        enum: ['applied', 'interviewing', 'offered', 'rejected'],
+        enum: exports.JOB_STATUSES,
         default: 'applied',
     }),
     __metadata("design:type", String)

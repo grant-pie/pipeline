@@ -1,5 +1,6 @@
 import { User } from '../../users/entities/user.entity';
-export type JobStatus = 'applied' | 'interviewing' | 'offered' | 'rejected';
+export declare const JOB_STATUSES: readonly ["applied", "interviewing", "offered", "rejected"];
+export type JobStatus = typeof JOB_STATUSES[number];
 export declare class Job {
     id: string;
     company: string;
