@@ -27,7 +27,7 @@ function makeJob(overrides: Partial<Job> = {}): Job {
 describe('JobsService', () => {
   let service: JobsService;
   let repo: {
-    find: jest.Mock;
+    findAndCount: jest.Mock;
     findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
@@ -36,7 +36,7 @@ describe('JobsService', () => {
 
   beforeEach(async () => {
     repo = {
-      find: jest.fn(),
+      findAndCount: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
@@ -59,34 +59,64 @@ describe('JobsService', () => {
   // findAll()
   // ---------------------------------------------------------------------------
   describe('findAll()', () => {
-    it('returns only jobs belonging to the requesting user', async () => {
+    it('returns paginated jobs belonging to the requesting user', async () => {
       const jobs = [makeJob(), makeJob({ id: 'job-uuid-2' })];
-      repo.find.mockResolvedValue(jobs);
+      repo.findAndCount.mockResolvedValue([jobs, 2]);
 
-      const result = await service.findAll(USER_A);
+      const result = await service.findAll(USER_A, 1, 20);
 
-      expect(repo.find).toHaveBeenCalledWith({
+      expect(repo.findAndCount).toHaveBeenCalledWith({
         where: { userId: USER_A },
         order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 20,
       });
-      expect(result).toBe(jobs);
+      expect(result.data).toBe(jobs);
+      expect(result.total).toBe(2);
     });
 
-    it('returns an empty array when the user has no jobs', async () => {
-      repo.find.mockResolvedValue([]);
+    it('returns an empty data array when the user has no jobs', async () => {
+      repo.findAndCount.mockResolvedValue([[], 0]);
 
-      const result = await service.findAll(USER_A);
+      const result = await service.findAll(USER_A, 1, 20);
 
-      expect(result).toEqual([]);
+      expect(result.data).toEqual([]);
+      expect(result.total).toBe(0);
     });
 
     it('orders results by createdAt DESC', async () => {
-      repo.find.mockResolvedValue([]);
+      repo.findAndCount.mockResolvedValue([[], 0]);
 
-      await service.findAll(USER_A);
+      await service.findAll(USER_A, 1, 20);
 
-      expect(repo.find).toHaveBeenCalledWith(
+      expect(repo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ order: { createdAt: 'DESC' } }),
+      );
+    });
+
+    it('sets hasMore true when more pages exist', async () => {
+      repo.findAndCount.mockResolvedValue([[makeJob()], 25]);
+
+      const result = await service.findAll(USER_A, 1, 20);
+
+      expect(result.hasMore).toBe(true);
+    });
+
+    it('sets hasMore false on the last page', async () => {
+      repo.findAndCount.mockResolvedValue([[makeJob()], 20]);
+
+      const result = await service.findAll(USER_A, 1, 20);
+
+      expect(result.hasMore).toBe(false);
+    });
+
+    it('skips the correct number of records for page 2', async () => {
+      repo.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.findAll(USER_A, 2, 20);
+
+      expect(repo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 20, take: 20 }),
       );
     });
   });

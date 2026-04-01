@@ -40,12 +40,14 @@
         :job="job"
         @delete="handleDelete"
       />
+      <div ref="sentinel" class="sentinel" />
+      <div v-if="jobsStore.loadingMore" class="state-msg load-more-msg">Loading more…</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useJobsStore } from '@/stores/jobs';
 import JobCard from '@/components/JobCard.vue';
 import type { JobStatus } from '@/types';
@@ -62,6 +64,8 @@ const statuses: { value: JobStatus | 'all'; label: string }[] = [
 
 const activeFilter = ref<JobStatus | 'all'>('all');
 const deleteError = ref('');
+const sentinel = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
 
 const filteredJobs = computed(() =>
   activeFilter.value === 'all'
@@ -85,7 +89,22 @@ async function handleDelete(id: string) {
   }
 }
 
-onMounted(() => jobsStore.fetchJobs());
+onMounted(async () => {
+  await jobsStore.fetchJobs();
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting) {
+        jobsStore.fetchNextPage();
+      }
+    },
+    { rootMargin: '200px' },
+  );
+
+  if (sentinel.value) observer.observe(sentinel.value);
+});
+
+onUnmounted(() => observer?.disconnect());
 </script>
 
 <style scoped>
@@ -164,5 +183,13 @@ onMounted(() => jobsStore.fetchJobs());
 .empty-sub {
   font-size: 14px;
   color: var(--text-muted);
+}
+
+.sentinel {
+  height: 1px;
+}
+
+.load-more-msg {
+  padding: 20px 0;
 }
 </style>

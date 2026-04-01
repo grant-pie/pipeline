@@ -25,14 +25,18 @@ const makeJob = (overrides: Partial<JobApplication> = {}): JobApplication => ({
 });
 
 const fetchJobs = vi.fn();
+const fetchNextPage = vi.fn();
 const deleteJob = vi.fn();
 
 // Mutable store state shared across tests
 let storeState = {
   jobs: [] as JobApplication[],
   loading: false,
+  loadingMore: false,
   error: null as string | null,
+  hasMore: false,
   fetchJobs,
+  fetchNextPage,
   deleteJob,
 };
 
@@ -40,11 +44,19 @@ vi.mock('@/stores/jobs', () => ({
   useJobsStore: () => storeState,
 }));
 
+// Stub IntersectionObserver (not available in jsdom)
+const observeMock = vi.fn();
+const disconnectMock = vi.fn();
+vi.stubGlobal('IntersectionObserver', vi.fn(() => ({
+  observe: observeMock,
+  disconnect: disconnectMock,
+})));
+
 describe('DashboardView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('confirm', vi.fn(() => true));
-    storeState = { jobs: [], loading: false, error: null, fetchJobs, deleteJob };
+    storeState = { jobs: [], loading: false, loadingMore: false, error: null, hasMore: false, fetchJobs, fetchNextPage, deleteJob };
   });
 
   // ── Mount behaviour ────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   HttpCode,
@@ -15,9 +16,6 @@ import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Query, ForbiddenException } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
-import { JOB_STATUSES } from './entities/job.entity';
 
 @Controller('jobs')
 @UseGuards(JwtAuthGuard)
@@ -25,8 +23,16 @@ export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
   @Get()
-  findAll(@Request() req) {
-    return this.jobsService.findAll(req.user.id);
+  findAll(
+    @Request() req,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+  ) {
+    return this.jobsService.findAll(
+      req.user.id,
+      Math.max(1, parseInt(page, 10) || 1),
+      Math.min(100, Math.max(1, parseInt(limit, 10) || 20)),
+    );
   }
 
   @Get(':id')

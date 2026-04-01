@@ -16,11 +16,14 @@ export class JobsService {
     private readonly jobsRepository: Repository<Job>,
   ) {}
 
-  async findAll(userId: string): Promise<Job[]> {
-    return this.jobsRepository.find({
+  async findAll(userId: string, page: number, limit: number): Promise<{ data: Job[]; total: number; hasMore: boolean }> {
+    const [data, total] = await this.jobsRepository.findAndCount({
       where: { userId },
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { data, total, hasMore: page * limit < total };
   }
 
   async findOne(id: string, userId: string): Promise<Job> {

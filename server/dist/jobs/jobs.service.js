@@ -21,11 +21,14 @@ let JobsService = class JobsService {
     constructor(jobsRepository) {
         this.jobsRepository = jobsRepository;
     }
-    async findAll(userId) {
-        return this.jobsRepository.find({
+    async findAll(userId, page, limit) {
+        const [data, total] = await this.jobsRepository.findAndCount({
             where: { userId },
             order: { createdAt: 'DESC' },
+            skip: (page - 1) * limit,
+            take: limit,
         });
+        return { data, total, hasMore: page * limit < total };
     }
     async findOne(id, userId) {
         const job = await this.jobsRepository.findOne({ where: { id } });

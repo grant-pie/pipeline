@@ -41,7 +41,7 @@ describe('useJobsStore', () => {
   beforeEach(async () => {
     setActivePinia(createPinia());
     const { jobsApi } = await import('@/api/jobs');
-    vi.mocked(jobsApi.getAll).mockResolvedValue([...mockJobs]);
+    vi.mocked(jobsApi.getAll).mockResolvedValue({ data: [...mockJobs], total: 2, hasMore: false });
     vi.mocked(jobsApi.create).mockResolvedValue({ ...mockJobs[0], id: 'job-3' });
     vi.mocked(jobsApi.delete).mockResolvedValue(undefined as never);
   });
@@ -131,7 +131,7 @@ describe('useJobsStore', () => {
     await store.fetchJobs();
     expect(store.error).toBe('First failure');
 
-    vi.mocked(jobsApi.getAll).mockResolvedValueOnce([...mockJobs]);
+    vi.mocked(jobsApi.getAll).mockResolvedValueOnce({ data: [...mockJobs], total: 2, hasMore: false });
     await store.fetchJobs();
     expect(store.error).toBeNull();
   });
@@ -159,5 +159,31 @@ describe('useJobsStore', () => {
     const result = await store.updateJob('job-1', { status: 'offered' });
 
     expect(result.status).toBe('offered');
+  });
+
+  it('fetchNextPage() appends jobs and advances the page', async () => {
+    const { jobsApi } = await import('@/api/jobs');
+    const page2Jobs = [{ ...mockJobs[0], id: 'job-3' }];
+    vi.mocked(jobsApi.getAll)
+      .mockResolvedValueOnce({ data: [...mockJobs], total: 3, hasMore: true })
+      .mockResolvedValueOnce({ data: page2Jobs, total: 3, hasMore: false });
+
+    const store = useJobsStore();
+    await store.fetchJobs();
+    expect(store.hasMore).toBe(true);
+
+    await store.fetchNextPage();
+    expect(store.jobs).toHaveLength(3);
+    expect(store.hasMore).toBe(false);
+  });
+
+  it('fetchNextPage() does nothing when hasMore is false', async () => {
+    const { jobsApi } = await import('@/api/jobs');
+    const store = useJobsStore();
+    await store.fetchJobs(); // hasMore: false from default mock
+    vi.mocked(jobsApi.getAll).mockClear();
+
+    await store.fetchNextPage();
+    expect(vi.mocked(jobsApi.getAll)).not.toHaveBeenCalled();
   });
 });

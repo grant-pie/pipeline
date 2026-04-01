@@ -6,17 +6,39 @@ import type { JobApplication, CreateJobDto, UpdateJobDto } from '@/types';
 export const useJobsStore = defineStore('jobs', () => {
   const jobs = ref<JobApplication[]>([]);
   const loading = ref(false);
+  const loadingMore = ref(false);
   const error = ref<string | null>(null);
+  const hasMore = ref(false);
+  const currentPage = ref(0);
 
   async function fetchJobs() {
     loading.value = true;
     error.value = null;
     try {
-      jobs.value = await jobsApi.getAll();
+      const result = await jobsApi.getAll(1);
+      jobs.value = result.data;
+      hasMore.value = result.hasMore;
+      currentPage.value = 1;
     } catch (e) {
       error.value = (e as Error).message;
     } finally {
       loading.value = false;
+    }
+  }
+
+  async function fetchNextPage() {
+    if (!hasMore.value || loadingMore.value) return;
+    loadingMore.value = true;
+    try {
+      const nextPage = currentPage.value + 1;
+      const result = await jobsApi.getAll(nextPage);
+      jobs.value.push(...result.data);
+      hasMore.value = result.hasMore;
+      currentPage.value = nextPage;
+    } catch {
+      // silently fail — user can scroll again to retry
+    } finally {
+      loadingMore.value = false;
     }
   }
 
@@ -42,5 +64,5 @@ export const useJobsStore = defineStore('jobs', () => {
     return jobs.value.find((j) => j.id === id) ?? null;
   }
 
-  return { jobs, loading, error, fetchJobs, createJob, updateJob, deleteJob, getJob };
+  return { jobs, loading, loadingMore, error, hasMore, fetchJobs, fetchNextPage, createJob, updateJob, deleteJob, getJob };
 });

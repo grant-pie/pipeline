@@ -15,11 +15,11 @@ describe('jobsApi', () => {
     vi.clearAllMocks();
   });
 
-  it('getAll() calls api.get("/jobs")', async () => {
-    mockGet.mockResolvedValue([]);
+  it('getAll() calls api.get with page and limit query params', async () => {
+    mockGet.mockResolvedValue({ data: [], total: 0, hasMore: false });
     const { jobsApi } = await import('./jobs');
-    await jobsApi.getAll();
-    expect(mockGet).toHaveBeenCalledWith('/jobs');
+    await jobsApi.getAll(1, 20);
+    expect(mockGet).toHaveBeenCalledWith('/jobs?page=1&limit=20');
   });
 
   it('getOne(id) calls api.get with the correct job path', async () => {

@@ -4,7 +4,11 @@ import { UpdateJobDto } from './dto/update-job.dto';
 export declare class JobsController {
     private readonly jobsService;
     constructor(jobsService: JobsService);
-    findAll(req: any): Promise<import("./entities/job.entity").Job[]>;
+    findAll(req: any, page?: string, limit?: string): Promise<{
+        data: import("./entities/job.entity").Job[];
+        total: number;
+        hasMore: boolean;
+    }>;
     findOne(id: string, req: any): Promise<import("./entities/job.entity").Job>;
     create(dto: CreateJobDto, req: any): Promise<import("./entities/job.entity").Job>;
     update(id: string, dto: UpdateJobDto, req: any): Promise<import("./entities/job.entity").Job>;
