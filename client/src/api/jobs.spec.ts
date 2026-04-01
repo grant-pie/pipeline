@@ -22,6 +22,13 @@ describe('jobsApi', () => {
     expect(mockGet).toHaveBeenCalledWith('/jobs?page=1&limit=20');
   });
 
+  it('search(query) calls api.get with encoded search param', async () => {
+    mockGet.mockResolvedValue({ data: [], total: 0, hasMore: false });
+    const { jobsApi } = await import('./jobs');
+    await jobsApi.search('acme corp');
+    expect(mockGet).toHaveBeenCalledWith('/jobs?search=acme%20corp');
+  });
+
   it('getOne(id) calls api.get with the correct job path', async () => {
     mockGet.mockResolvedValue({});
     const { jobsApi } = await import('./jobs');

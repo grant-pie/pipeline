@@ -7,6 +7,7 @@ export const useJobsStore = defineStore('jobs', () => {
   const jobs = ref<JobApplication[]>([]);
   const loading = ref(false);
   const loadingMore = ref(false);
+  const searching = ref(false);
   const error = ref<string | null>(null);
   const hasMore = ref(false);
   const currentPage = ref(0);
@@ -23,6 +24,21 @@ export const useJobsStore = defineStore('jobs', () => {
       error.value = (e as Error).message;
     } finally {
       loading.value = false;
+    }
+  }
+
+  async function searchJobs(query: string) {
+    searching.value = true;
+    error.value = null;
+    try {
+      const result = await jobsApi.search(query);
+      jobs.value = result.data;
+      hasMore.value = false;
+      currentPage.value = 0;
+    } catch (e) {
+      error.value = (e as Error).message;
+    } finally {
+      searching.value = false;
     }
   }
 
@@ -64,5 +80,5 @@ export const useJobsStore = defineStore('jobs', () => {
     return jobs.value.find((j) => j.id === id) ?? null;
   }
 
-  return { jobs, loading, loadingMore, error, hasMore, fetchJobs, fetchNextPage, createJob, updateJob, deleteJob, getJob };
+  return { jobs, loading, loadingMore, searching, error, hasMore, fetchJobs, searchJobs, fetchNextPage, createJob, updateJob, deleteJob, getJob };
 });

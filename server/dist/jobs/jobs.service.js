@@ -21,7 +21,16 @@ let JobsService = class JobsService {
     constructor(jobsRepository) {
         this.jobsRepository = jobsRepository;
     }
-    async findAll(userId, page, limit) {
+    async findAll(userId, page, limit, search) {
+        if (search) {
+            const data = await this.jobsRepository
+                .createQueryBuilder('job')
+                .where('job.userId = :userId', { userId })
+                .andWhere('(job.company ILIKE :search OR job.title ILIKE :search OR CAST(job."dateApplied" AS TEXT) ILIKE :search)', { search: `%${search}%` })
+                .orderBy('job.createdAt', 'DESC')
+                .getMany();
+            return { data, total: data.length, hasMore: false };
+        }
         const [data, total] = await this.jobsRepository.findAndCount({
             where: { userId },
             order: { createdAt: 'DESC' },

@@ -10,6 +10,8 @@ export interface PaginatedJobs {
 export const jobsApi = {
   getAll: (page = 1, limit = 20) =>
     api.get<PaginatedJobs>(`/jobs?page=${page}&limit=${limit}`),
+  search: (query: string) =>
+    api.get<PaginatedJobs>(`/jobs?search=${encodeURIComponent(query)}`),
   getOne: (id: string) => api.get<JobApplication>(`/jobs/${id}`),
   create: (dto: CreateJobDto) => api.post<JobApplication>('/jobs', dto),
   update: (id: string, dto: UpdateJobDto) =>

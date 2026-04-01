@@ -27,11 +27,13 @@ export class JobsController {
     @Request() req,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
+    @Query('search') search?: string,
   ) {
     return this.jobsService.findAll(
       req.user.id,
       Math.max(1, parseInt(page, 10) || 1),
       Math.min(100, Math.max(1, parseInt(limit, 10) || 20)),
+      search?.trim() || undefined,
     );
   }
 

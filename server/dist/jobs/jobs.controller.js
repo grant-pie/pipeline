@@ -22,8 +22,8 @@ let JobsController = class JobsController {
     constructor(jobsService) {
         this.jobsService = jobsService;
     }
-    findAll(req, page = '1', limit = '20') {
-        return this.jobsService.findAll(req.user.id, Math.max(1, parseInt(page, 10) || 1), Math.min(100, Math.max(1, parseInt(limit, 10) || 20)));
+    findAll(req, page = '1', limit = '20', search) {
+        return this.jobsService.findAll(req.user.id, Math.max(1, parseInt(page, 10) || 1), Math.min(100, Math.max(1, parseInt(limit, 10) || 20)), search?.trim() || undefined);
     }
     findOne(id, req) {
         return this.jobsService.findOne(id, req.user.id);
@@ -44,8 +44,9 @@ __decorate([
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:paramtypes", [Object, Object, Object, String]),
     __metadata("design:returntype", void 0)
 ], JobsController.prototype, "findAll", null);
 __decorate([

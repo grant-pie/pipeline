@@ -26,6 +26,7 @@ const makeJob = (overrides: Partial<JobApplication> = {}): JobApplication => ({
 
 const fetchJobs = vi.fn();
 const fetchNextPage = vi.fn();
+const searchJobs = vi.fn();
 const deleteJob = vi.fn();
 
 // Mutable store state shared across tests
@@ -33,10 +34,12 @@ let storeState = {
   jobs: [] as JobApplication[],
   loading: false,
   loadingMore: false,
+  searching: false,
   error: null as string | null,
   hasMore: false,
   fetchJobs,
   fetchNextPage,
+  searchJobs,
   deleteJob,
 };
 
@@ -54,9 +57,14 @@ vi.stubGlobal('IntersectionObserver', vi.fn(() => ({
 
 describe('DashboardView', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     vi.stubGlobal('confirm', vi.fn(() => true));
-    storeState = { jobs: [], loading: false, loadingMore: false, error: null, hasMore: false, fetchJobs, fetchNextPage, deleteJob };
+    storeState = { jobs: [], loading: false, loadingMore: false, searching: false, error: null, hasMore: false, fetchJobs, fetchNextPage, searchJobs, deleteJob };
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // ── Mount behaviour ────────────────────────────────────────────────────
@@ -90,6 +98,55 @@ describe('DashboardView', () => {
     storeState.jobs = [makeJob()];
     const wrapper = mount(DashboardView, { global: { stubs } });
     expect(wrapper.text()).not.toContain('No applications yet');
+  });
+
+  // ── Search ─────────────────────────────────────────────────────────────
+
+  it('calls searchJobs after debounce when search input has a value', async () => {
+    const wrapper = mount(DashboardView, { global: { stubs } });
+    await wrapper.find('.search-input').setValue('acme');
+    expect(searchJobs).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(300);
+    expect(searchJobs).toHaveBeenCalledWith('acme');
+  });
+
+  it('calls fetchJobs after debounce when search is cleared', async () => {
+    const wrapper = mount(DashboardView, { global: { stubs } });
+    await wrapper.find('.search-input').setValue('acme');
+    vi.advanceTimersByTime(300);
+    await wrapper.find('.search-input').setValue('');
+    vi.advanceTimersByTime(300);
+    expect(fetchJobs).toHaveBeenCalledTimes(2); // once on mount, once on clear
+  });
+
+  it('does not call searchJobs before the debounce delay', async () => {
+    const wrapper = mount(DashboardView, { global: { stubs } });
+    await wrapper.find('.search-input').setValue('acme');
+    vi.advanceTimersByTime(299);
+    expect(searchJobs).not.toHaveBeenCalled();
+  });
+
+  it('shows no-results message when jobs is empty and search has a value', async () => {
+    storeState.jobs = [];
+    const wrapper = mount(DashboardView, { global: { stubs } });
+    // simulate search returning empty results
+    storeState.jobs = [];
+    await wrapper.find('.search-input').setValue('zzz');
+    vi.advanceTimersByTime(300);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain('No results');
+  });
+
+  it('status filter still applies to search results', async () => {
+    storeState.jobs = [
+      makeJob({ id: 'job-1', company: 'Acme', status: 'applied' }),
+      makeJob({ id: 'job-2', company: 'Acme', status: 'rejected' }),
+    ];
+    const wrapper = mount(DashboardView, { global: { stubs } });
+    const appliedBtn = wrapper.findAll('.filter-btn').find((b) => b.text().includes('Applied'));
+    await appliedBtn!.trigger('click');
+    expect(wrapper.findAll('.job-card-stub')).toHaveLength(1);
+    expect(wrapper.find('.job-card-stub').attributes('data-id')).toBe('job-1');
   });
 
   // ── Job list rendering ─────────────────────────────────────────────────

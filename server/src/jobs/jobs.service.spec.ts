@@ -26,21 +26,30 @@ function makeJob(overrides: Partial<Job> = {}): Job {
 
 describe('JobsService', () => {
   let service: JobsService;
+  let qb: { where: jest.Mock; andWhere: jest.Mock; orderBy: jest.Mock; getMany: jest.Mock };
   let repo: {
     findAndCount: jest.Mock;
     findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
     remove: jest.Mock;
+    createQueryBuilder: jest.Mock;
   };
 
   beforeEach(async () => {
+    qb = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
     repo = {
       findAndCount: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(qb),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -118,6 +127,46 @@ describe('JobsService', () => {
       expect(repo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ skip: 20, take: 20 }),
       );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // findAll() — search
+  // ---------------------------------------------------------------------------
+  describe('findAll() with search', () => {
+    it('uses the query builder instead of findAndCount when search is provided', async () => {
+      qb.getMany.mockResolvedValue([makeJob()]);
+
+      await service.findAll(USER_A, 1, 20, 'acme');
+
+      expect(repo.createQueryBuilder).toHaveBeenCalledWith('job');
+      expect(repo.findAndCount).not.toHaveBeenCalled();
+    });
+
+    it('scopes results to the requesting user', async () => {
+      qb.getMany.mockResolvedValue([]);
+
+      await service.findAll(USER_A, 1, 20, 'acme');
+
+      expect(qb.where).toHaveBeenCalledWith('job.userId = :userId', { userId: USER_A });
+    });
+
+    it('returns hasMore: false regardless of result count', async () => {
+      qb.getMany.mockResolvedValue([makeJob(), makeJob({ id: 'job-2' })]);
+
+      const result = await service.findAll(USER_A, 1, 20, 'acme');
+
+      expect(result.hasMore).toBe(false);
+    });
+
+    it('returns all matching results without pagination', async () => {
+      const jobs = Array.from({ length: 30 }, (_, i) => makeJob({ id: `job-${i}` }));
+      qb.getMany.mockResolvedValue(jobs);
+
+      const result = await service.findAll(USER_A, 1, 20, 'engineer');
+
+      expect(result.data).toHaveLength(30);
+      expect(result.total).toBe(30);
     });
   });
 

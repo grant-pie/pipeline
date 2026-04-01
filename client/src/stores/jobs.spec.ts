@@ -31,6 +31,7 @@ const mockJobs: JobApplication[] = [
 vi.mock('@/api/jobs', () => ({
   jobsApi: {
     getAll: vi.fn(),
+    search: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
@@ -175,6 +176,39 @@ describe('useJobsStore', () => {
     await store.fetchNextPage();
     expect(store.jobs).toHaveLength(3);
     expect(store.hasMore).toBe(false);
+  });
+
+  it('searchJobs() replaces jobs with search results and sets hasMore to false', async () => {
+    const { jobsApi } = await import('@/api/jobs');
+    const searchResults = [mockJobs[0]];
+    vi.mocked(jobsApi.search).mockResolvedValueOnce({ data: searchResults, total: 1, hasMore: false });
+
+    const store = useJobsStore();
+    await store.fetchJobs();
+    await store.searchJobs('acme');
+
+    expect(vi.mocked(jobsApi.search)).toHaveBeenCalledWith('acme');
+    expect(store.jobs).toEqual(searchResults);
+    expect(store.hasMore).toBe(false);
+  });
+
+  it('searchJobs() uses searching flag, not loading, so the job list stays visible', async () => {
+    const { jobsApi } = await import('@/api/jobs');
+    let searchingDuringFetch = false;
+    let loadingDuringFetch = false;
+    vi.mocked(jobsApi.search).mockImplementationOnce(async () => {
+      const store = useJobsStore();
+      searchingDuringFetch = store.searching;
+      loadingDuringFetch = store.loading;
+      return { data: [], total: 0, hasMore: false };
+    });
+
+    const store = useJobsStore();
+    await store.searchJobs('acme');
+
+    expect(searchingDuringFetch).toBe(true);
+    expect(loadingDuringFetch).toBe(false);
+    expect(store.searching).toBe(false);
   });
 
   it('fetchNextPage() does nothing when hasMore is false', async () => {

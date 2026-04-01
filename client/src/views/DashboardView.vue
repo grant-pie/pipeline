@@ -7,32 +7,47 @@
       </RouterLink>
     </div>
 
-    <!-- Filters -->
-    <div class="filters">
-      <button
-        v-for="s in statuses"
-        :key="s.value"
-        class="filter-btn"
-        :class="{ active: activeFilter === s.value }"
-        @click="activeFilter = s.value"
-      >
-        {{ s.label }}
-        <span class="filter-count">{{ countByStatus(s.value) }}</span>
-      </button>
+    <!-- Search + Filters -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input
+          v-model="search"
+          type="search"
+          class="search-input"
+          placeholder="Search by company, title or date…"
+        />
+        <p class="search-hint">Search dates using YYYY-MM-DD format, e.g. <span>2026</span>, <span>2026-03</span>, or <span>2026-03-20</span></p>
+      </div>
+      <div class="filters">
+        <button
+          v-for="s in statuses"
+          :key="s.value"
+          class="filter-btn"
+          :class="{ active: activeFilter === s.value }"
+          @click="activeFilter = s.value"
+        >
+          {{ s.label }}
+          <span class="filter-count">{{ countByStatus(s.value) }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- States -->
     <div v-if="jobsStore.loading" class="state-msg">Loading…</div>
     <div v-else-if="jobsStore.error" class="state-msg error-msg">{{ jobsStore.error }}</div>
-    <div v-else-if="filteredJobs.length === 0" class="empty-state">
+    <div v-else-if="jobsStore.jobs.length === 0 && !search.trim()" class="empty-state">
       <p class="empty-title">No applications yet</p>
       <p class="empty-sub">
         <RouterLink to="/jobs/new">Add your first application</RouterLink> to get started.
       </p>
     </div>
+    <div v-else-if="filteredJobs.length === 0" class="empty-state">
+      <p class="empty-title">No results</p>
+      <p class="empty-sub">No applications match your search.</p>
+    </div>
 
     <!-- Job list -->
-    <div v-else class="job-list">
+    <div v-else class="job-list" :class="{ 'job-list--searching': jobsStore.searching }">
       <p v-if="deleteError" class="state-msg error-msg">{{ deleteError }}</p>
       <JobCard
         v-for="job in filteredJobs"
@@ -47,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useJobsStore } from '@/stores/jobs';
 import JobCard from '@/components/JobCard.vue';
 import type { JobStatus } from '@/types';
@@ -63,6 +78,7 @@ const statuses: { value: JobStatus | 'all'; label: string }[] = [
 ];
 
 const activeFilter = ref<JobStatus | 'all'>('all');
+const search = ref('');
 const deleteError = ref('');
 const sentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
@@ -72,6 +88,18 @@ const filteredJobs = computed(() =>
     ? jobsStore.jobs
     : jobsStore.jobs.filter((j) => j.status === activeFilter.value),
 );
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+watch(search, (q) => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    if (q.trim()) {
+      jobsStore.searchJobs(q.trim());
+    } else {
+      jobsStore.fetchJobs();
+    }
+  }, 300);
+});
 
 function countByStatus(status: JobStatus | 'all'): number {
   return status === 'all'
@@ -120,11 +148,43 @@ onUnmounted(() => observer?.disconnect());
   text-decoration: none;
 }
 
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 360px;
+  padding: 7px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+}
+
+.search-hint {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.search-hint span {
+  font-family: monospace;
+}
+
 .filters {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 28px;
 }
 
 .filter-btn {
@@ -160,6 +220,12 @@ onUnmounted(() => observer?.disconnect());
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: opacity 0.15s ease;
+}
+
+.job-list--searching {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .state-msg {
