@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   ForbiddenException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -56,6 +57,7 @@ describe('AuthService', () => {
             findByResetToken: jest.fn(),
             setResetToken: jest.fn(),
             updatePassword: jest.fn(),
+            deleteById: jest.fn(),
           },
         },
         {
@@ -88,16 +90,15 @@ describe('AuthService', () => {
   describe('register()', () => {
     const dto = { email: 'new@example.com', password: 'password123' };
 
-    it('creates the user and sends a verification email', async () => {
+    it('sends the verification email then creates the user', async () => {
+      const callOrder: string[] = [];
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(makeUser({ email: dto.email }));
-      mailService.sendVerificationEmail.mockResolvedValue(undefined);
+      mailService.sendVerificationEmail.mockImplementation(async () => { callOrder.push('email'); });
+      usersService.create.mockImplementation(async () => { callOrder.push('create'); return makeUser({ email: dto.email }); });
 
       const result = await service.register(dto);
 
-      expect(usersService.findByEmail).toHaveBeenCalledWith(dto.email);
-      expect(usersService.create).toHaveBeenCalledTimes(1);
-      expect(mailService.sendVerificationEmail).toHaveBeenCalledTimes(1);
+      expect(callOrder).toEqual(['email', 'create']);
       expect(result).toEqual({ message: expect.any(String) });
     });
 
@@ -136,6 +137,14 @@ describe('AuthService', () => {
       await expect(service.register(dto)).rejects.toThrow(ConflictException);
       expect(usersService.create).not.toHaveBeenCalled();
       expect(mailService.sendVerificationEmail).not.toHaveBeenCalled();
+    });
+
+    it('throws InternalServerErrorException and does not create the user when the verification email fails', async () => {
+      usersService.findByEmail.mockResolvedValue(null);
+      mailService.sendVerificationEmail.mockRejectedValue(new Error('SMTP error'));
+
+      await expect(service.register(dto)).rejects.toThrow(InternalServerErrorException);
+      expect(usersService.create).not.toHaveBeenCalled();
     });
   });
 

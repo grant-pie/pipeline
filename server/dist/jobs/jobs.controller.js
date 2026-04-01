@@ -18,9 +18,6 @@ const jobs_service_1 = require("./jobs.service");
 const create_job_dto_1 = require("./dto/create-job.dto");
 const update_job_dto_1 = require("./dto/update-job.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const common_2 = require("@nestjs/common");
-const faker_1 = require("@faker-js/faker");
-const job_entity_1 = require("./entities/job.entity");
 let JobsController = class JobsController {
     constructor(jobsService) {
         this.jobsService = jobsService;
@@ -39,35 +36,6 @@ let JobsController = class JobsController {
     }
     remove(id, req) {
         return this.jobsService.remove(id, req.user.id);
-    }
-    async seedJobs(req, count = '10') {
-        if (process.env.NODE_ENV !== 'development') {
-            throw new common_2.ForbiddenException('Seeding only allowed in development');
-        }
-        const total = Math.min(parseInt(count, 10) || 10, 100);
-        const jobs = [];
-        for (let i = 0; i < total; i++) {
-            const dto = {
-                company: faker_1.faker.company.name().slice(0, 100),
-                title: faker_1.faker.person.jobTitle().slice(0, 100),
-                dateApplied: faker_1.faker.date
-                    .past({ years: 1 })
-                    .toISOString(),
-                status: faker_1.faker.helpers.arrayElement(job_entity_1.JOB_STATUSES),
-                notes: faker_1.faker.datatype.boolean()
-                    ? faker_1.faker.lorem.paragraph().slice(0, 2000)
-                    : undefined,
-                link: faker_1.faker.datatype.boolean()
-                    ? faker_1.faker.internet.url().slice(0, 500)
-                    : undefined,
-            };
-            const job = await this.jobsService.create(dto, req.user.id);
-            jobs.push(job);
-        }
-        return {
-            message: `Created ${jobs.length} fake job applications`,
-            count: jobs.length,
-        };
     }
 };
 exports.JobsController = JobsController;
@@ -112,14 +80,6 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], JobsController.prototype, "remove", null);
-__decorate([
-    (0, common_1.Post)('seed'),
-    __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_2.Query)('count')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], JobsController.prototype, "seedJobs", null);
 exports.JobsController = JobsController = __decorate([
     (0, common_1.Controller)('jobs'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

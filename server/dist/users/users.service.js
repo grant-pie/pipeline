@@ -53,6 +53,9 @@ let UsersService = class UsersService {
             resetTokenExpiry: null,
         });
     }
+    async deleteById(id) {
+        await this.usersRepository.delete(id);
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

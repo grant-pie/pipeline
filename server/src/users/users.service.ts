@@ -50,4 +50,8 @@ export class UsersService {
       resetTokenExpiry: null,
     });
   }
+
+  async deleteById(id: string): Promise<void> {
+    await this.usersRepository.delete(id);
+  }
 }

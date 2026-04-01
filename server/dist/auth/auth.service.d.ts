@@ -9,6 +9,7 @@ export declare class AuthService {
     private readonly usersService;
     private readonly jwtService;
     private readonly mailService;
+    private readonly logger;
     constructor(usersService: UsersService, jwtService: JwtService, mailService: MailService);
     register(dto: RegisterDto): Promise<{
         message: string;

@@ -1,9 +1,11 @@
 import {
   Injectable,
+  Logger,
   ConflictException,
   UnauthorizedException,
   BadRequestException,
   ForbiddenException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -21,6 +23,8 @@ function hashToken(token: string): string {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -35,13 +39,26 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const user = await this.usersService.create(
+
+    try {
+      await this.mailService.sendVerificationEmail(dto.email, verificationToken);
+    } catch (err) {
+      this.logger.error(
+        `Failed to send verification email to ${dto.email}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new InternalServerErrorException(
+        'Failed to send verification email. Please try again.',
+      );
+    }
+
+    await this.usersService.create(
       dto.email,
       hashedPassword,
       hashToken(verificationToken),
     );
-    await this.mailService.sendVerificationEmail(user.email, verificationToken);
 
+    this.logger.log(`Account created for ${dto.email}`);
     return { message: 'Account created. Please check your email to verify your account.' };
   }
 

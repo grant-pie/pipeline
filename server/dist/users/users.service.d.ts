@@ -12,4 +12,5 @@ export declare class UsersService {
     findByResetToken(token: string): Promise<User | null>;
     setResetToken(id: string, token: string, expiry: Date): Promise<void>;
     updatePassword(id: string, hashedPassword: string): Promise<void>;
+    deleteById(id: string): Promise<void>;
 }

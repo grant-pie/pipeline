@@ -9,8 +9,4 @@ export declare class JobsController {
     create(dto: CreateJobDto, req: any): Promise<import("./entities/job.entity").Job>;
     update(id: string, dto: UpdateJobDto, req: any): Promise<import("./entities/job.entity").Job>;
     remove(id: string, req: any): Promise<void>;
-    seedJobs(req: any, count?: string): Promise<{
-        message: string;
-        count: number;
-    }>;
 }

@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AuthService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,11 +20,12 @@ const mail_service_1 = require("../mail/mail.service");
 function hashToken(token) {
     return crypto.createHash('sha256').update(token).digest('hex');
 }
-let AuthService = class AuthService {
+let AuthService = AuthService_1 = class AuthService {
     constructor(usersService, jwtService, mailService) {
         this.usersService = usersService;
         this.jwtService = jwtService;
         this.mailService = mailService;
+        this.logger = new common_1.Logger(AuthService_1.name);
     }
     async register(dto) {
         const existing = await this.usersService.findByEmail(dto.email);
@@ -32,8 +34,15 @@ let AuthService = class AuthService {
         }
         const hashedPassword = await bcrypt.hash(dto.password, 10);
         const verificationToken = crypto.randomBytes(32).toString('hex');
-        const user = await this.usersService.create(dto.email, hashedPassword, hashToken(verificationToken));
-        await this.mailService.sendVerificationEmail(user.email, verificationToken);
+        try {
+            await this.mailService.sendVerificationEmail(dto.email, verificationToken);
+        }
+        catch (err) {
+            this.logger.error(`Failed to send verification email to ${dto.email}`, err instanceof Error ? err.stack : String(err));
+            throw new common_1.InternalServerErrorException('Failed to send verification email. Please try again.');
+        }
+        await this.usersService.create(dto.email, hashedPassword, hashToken(verificationToken));
+        this.logger.log(`Account created for ${dto.email}`);
         return { message: 'Account created. Please check your email to verify your account.' };
     }
     async login(dto) {
@@ -92,7 +101,7 @@ let AuthService = class AuthService {
     }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [users_service_1.UsersService,
         jwt_1.JwtService,
