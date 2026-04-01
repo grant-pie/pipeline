@@ -26,7 +26,7 @@ function handleExpiredSession() {
   router.push({ name: 'login', query: { reason: 'expired' } });
 }
 
-function normalizeErrorMessage(value: unknown): string {
+function normalizeErrorMessage(value: unknown, status?: number): string {
   if (typeof value === 'string' && value.trim()) return value;
   if (
     typeof value === 'object' &&
@@ -36,6 +36,12 @@ function normalizeErrorMessage(value: unknown): string {
   ) {
     const message = (value as { message: string }).message.trim();
     if (message) return message;
+  }
+  if (status !== undefined) {
+    if (status >= 500) return 'The server is currently unavailable. Please try again later.';
+    if (status === 404) return 'The requested resource was not found.';
+    if (status === 403) return 'You do not have permission to perform this action.';
+    if (status === 400) return 'Invalid request. Please check your input and try again.';
   }
   return 'Request failed. Please try again.';
 }
@@ -62,7 +68,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   if (!response.ok) {
     const error = await response.json().catch(() => null);
-    throw new Error(normalizeErrorMessage(error));
+    throw new Error(normalizeErrorMessage(error, response.status));
   }
 
   if (response.status === 204) return null as T;

@@ -173,6 +173,6 @@ describe('api client', () => {
       }),
     );
     const { api } = await import('./client');
-    await expect(api.get('/jobs')).rejects.toThrow('Request failed. Please try again.');
+    await expect(api.get('/jobs')).rejects.toThrow('The server is currently unavailable. Please try again later.');
   });
 });
