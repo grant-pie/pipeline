@@ -33,6 +33,7 @@
             placeholder="••••••••"
             required
             autocomplete="current-password"
+            maxlength="128"
           />
         </div>
 

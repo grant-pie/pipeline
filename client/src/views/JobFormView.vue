@@ -69,7 +69,7 @@
           id="link"
           v-model="form.link"
           type="text"
-          placeholder="google.com or https://google.com"
+          placeholder="https://example.com/jobs/123"
           maxlength="500"
         />
       </div>
@@ -153,6 +153,19 @@ async function handleSubmit() {
   error.value = '';
   try {
     const normalizedLink = normalizeUrl(form.link);
+
+    if (normalizedLink) {
+      try {
+        const parsed = new URL(normalizedLink);
+        if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname.includes('.')) {
+          throw new Error();
+        }
+      } catch {
+        error.value = 'Please enter a valid URL (e.g. https://example.com/jobs/123)';
+        loading.value = false;
+        return;
+      }
+    }
 
     const payload = {
       company: form.company,

@@ -6,7 +6,8 @@
       "Bash(find /c/Users/grant/Workspaces/pipeline/server -name *.spec.ts -o -name *.test.ts)",
       "Bash(ls -la /c/Users/grant/Workspaces/pipeline/server/*.json)",
       "Bash(npm test:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(find /c/Users/grant/Workspaces/pipeline/server/src -name *.ts)"
     ]
   }
 }

@@ -34,6 +34,7 @@
               required
               autocomplete="new-password"
               minlength="8"
+            maxlength="128"
             />
           </div>
 
@@ -48,10 +49,12 @@
               autocomplete="new-password"
               minlength="8"
               maxlength="128"
+              @input="checkPasswordMatch"
             />
           </div>
 
-          <p v-if="error" class="error-msg">{{ error }}</p>
+          <p v-if="passwordMatchError" class="error-msg">{{ passwordMatchError }}</p>
+          <p v-else-if="error" class="error-msg">{{ error }}</p>
 
           <button type="submit" class="btn-primary submit-btn" :disabled="loading">
             {{ loading ? 'Saving…' : 'Set new password' }}
@@ -75,11 +78,25 @@ const password = ref('');
 const confirm = ref('');
 const loading = ref(false);
 const error = ref('');
+const passwordMatchError = ref('');
 const submitted = ref(false);
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function checkPasswordMatch() {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    if (confirm.value && password.value !== confirm.value) {
+      passwordMatchError.value = 'Passwords do not match.';
+    } else {
+      passwordMatchError.value = '';
+    }
+  }, 300);
+}
 
 async function handleSubmit() {
   if (password.value !== confirm.value) {
-    error.value = 'Passwords do not match.';
+    passwordMatchError.value = 'Passwords do not match.';
     return;
   }
 
