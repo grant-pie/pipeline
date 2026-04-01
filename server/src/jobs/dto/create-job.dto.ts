@@ -1,6 +1,6 @@
 import { IsString, IsIn, IsOptional, IsDateString, IsNotEmpty, IsUrl, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { JobStatus } from '../entities/job.entity';
+import { JobStatus, JOB_STATUSES } from '../entities/job.entity';
 
 export class CreateJobDto {
   @Transform(({ value }) => value?.trim())
@@ -18,7 +18,7 @@ export class CreateJobDto {
   @IsDateString()
   dateApplied: string;
 
-  @IsIn(['applied', 'interviewing', 'offered', 'rejected'])
+  @IsIn(JOB_STATUSES)
   status: JobStatus;
 
   @IsOptional()
@@ -28,7 +28,7 @@ export class CreateJobDto {
   notes?: string;
 
   @IsOptional()
-  @IsUrl({ require_protocol: false })
+  @IsUrl({ require_tld: true, protocols: ['http', 'https'], require_protocol: true })
   @MaxLength(500)
   link?: string;
 }

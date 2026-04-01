@@ -105,4 +105,59 @@ describe('useJobsStore', () => {
     await store.fetchJobs();
     expect(store.getJob('nonexistent')).toBeNull();
   });
+
+  it('loading starts as false', () => {
+    const store = useJobsStore();
+    expect(store.loading).toBe(false);
+  });
+
+  it('error starts as null', () => {
+    const store = useJobsStore();
+    expect(store.error).toBeNull();
+  });
+
+  it('fetchJobs() sets error when the API throws', async () => {
+    const { jobsApi } = await import('@/api/jobs');
+    vi.mocked(jobsApi.getAll).mockRejectedValueOnce(new Error('Network error'));
+    const store = useJobsStore();
+    await store.fetchJobs();
+    expect(store.error).toBe('Network error');
+  });
+
+  it('fetchJobs() clears a previous error on retry', async () => {
+    const { jobsApi } = await import('@/api/jobs');
+    vi.mocked(jobsApi.getAll).mockRejectedValueOnce(new Error('First failure'));
+    const store = useJobsStore();
+    await store.fetchJobs();
+    expect(store.error).toBe('First failure');
+
+    vi.mocked(jobsApi.getAll).mockResolvedValueOnce([...mockJobs]);
+    await store.fetchJobs();
+    expect(store.error).toBeNull();
+  });
+
+  it('updateJob() calls the API and updates the job in the array in-place', async () => {
+    const { jobsApi } = await import('@/api/jobs');
+    const updated = { ...mockJobs[0], status: 'interviewing' as const };
+    vi.mocked(jobsApi.update).mockResolvedValueOnce(updated);
+
+    const store = useJobsStore();
+    await store.fetchJobs();
+    await store.updateJob('job-1', { status: 'interviewing' });
+
+    expect(jobsApi.update).toHaveBeenCalledWith('job-1', { status: 'interviewing' });
+    expect(store.jobs.find((j) => j.id === 'job-1')?.status).toBe('interviewing');
+  });
+
+  it('updateJob() returns the updated job', async () => {
+    const { jobsApi } = await import('@/api/jobs');
+    const updated = { ...mockJobs[0], status: 'offered' as const };
+    vi.mocked(jobsApi.update).mockResolvedValueOnce(updated);
+
+    const store = useJobsStore();
+    await store.fetchJobs();
+    const result = await store.updateJob('job-1', { status: 'offered' });
+
+    expect(result.status).toBe('offered');
+  });
 });

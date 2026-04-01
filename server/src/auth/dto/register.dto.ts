@@ -2,7 +2,6 @@ import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength } from 'class-valid
 
 export class RegisterDto {
   @IsEmail()
-  @IsNotEmpty()
   @MaxLength(255)
   email: string;
 

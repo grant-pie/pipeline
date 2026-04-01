@@ -170,9 +170,14 @@ describe('CreateJobDto', () => {
     expect(errors).toHaveLength(0);
   });
 
-  it('passes when link is a valid URL without protocol (require_protocol: false)', async () => {
+  it('fails when link is a URL without protocol', async () => {
     const errors = await validateDto({ ...validPayload, link: 'example.com/jobs/1' });
-    expect(errors).toHaveLength(0);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it('fails when link uses a non-http/https protocol', async () => {
+    const errors = await validateDto({ ...validPayload, link: 'ftp://example.com/jobs/1' });
+    expect(errors.length).toBeGreaterThan(0);
   });
 
   it('fails when link is a plain invalid string', async () => {

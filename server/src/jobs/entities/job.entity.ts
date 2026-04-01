@@ -9,7 +9,8 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
-export type JobStatus = 'applied' | 'interviewing' | 'offered' | 'rejected';
+export const JOB_STATUSES = ['applied', 'interviewing', 'offered', 'rejected'] as const;
+export type JobStatus = typeof JOB_STATUSES[number];
 
 @Entity('jobs')
 export class Job {
@@ -27,7 +28,7 @@ export class Job {
 
   @Column({
     type: 'enum',
-    enum: ['applied', 'interviewing', 'offered', 'rejected'],
+    enum: JOB_STATUSES,
     default: 'applied',
   })
   status: JobStatus;
