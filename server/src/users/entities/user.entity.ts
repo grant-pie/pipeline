@@ -7,6 +7,11 @@ import {
 } from 'typeorm';
 import { Job } from '../../jobs/entities/job.entity';
 
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -17,6 +22,9 @@ export class User {
 
   @Column()
   password: string;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
 
   @Column({ default: false })
   isVerified: boolean;

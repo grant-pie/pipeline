@@ -77,11 +77,11 @@ export class AuthService {
       throw new ForbiddenException('Please verify your email before signing in.');
     }
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
+    const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
 
     return {
       accessToken: token,
-      user: { id: user.id, email: user.email, createdAt: user.createdAt },
+      user: { id: user.id, email: user.email, role: user.role, createdAt: user.createdAt },
     };
   }
 

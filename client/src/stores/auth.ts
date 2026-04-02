@@ -19,6 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(readStoredUser());
 
   const isAuthenticated = computed(() => !!token.value);
+  const isAdmin = computed(() => user.value?.role === 'admin');
 
   function setAuth(accessToken: string, userData: User) {
     token.value = accessToken;
@@ -47,5 +48,5 @@ export const useAuthStore = defineStore('auth', () => {
     clearAuth();
   }
 
-  return { token, user, isAuthenticated, login, register, logout, clearAuth };
+  return { token, user, isAuthenticated, isAdmin, login, register, logout, clearAuth };
 });
