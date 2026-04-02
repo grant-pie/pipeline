@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import AdminDashboard from './AdminDashboard.vue';
 
-const mockGetStats = vi.fn();
+const mockGetStats = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/admin', () => ({
   adminApi: { getStats: mockGetStats },

@@ -20,7 +20,10 @@ vi.mock('@/stores/auth', () => ({
 }));
 
 const stubs = {
-  RouterLink: { template: '<a :href="to" :class="$attrs.class"><slot /></a>', props: ['to'] },
+  RouterLink: {
+    template: '<a :href="typeof to === \'string\' ? to : JSON.stringify(to)" :class="$attrs.class"><slot /></a>',
+    props: ['to'],
+  },
 };
 
 describe('NavBar', () => {

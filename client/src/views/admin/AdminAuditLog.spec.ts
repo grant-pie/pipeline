@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import AdminAuditLog from './AdminAuditLog.vue';
 
-const mockGetAuditLog = vi.fn();
+const mockGetAuditLog = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/admin', () => ({
   adminApi: { getAuditLog: mockGetAuditLog },

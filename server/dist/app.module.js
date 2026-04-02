@@ -15,8 +15,10 @@ const throttler_1 = require("@nestjs/throttler");
 const auth_module_1 = require("./auth/auth.module");
 const jobs_module_1 = require("./jobs/jobs.module");
 const users_module_1 = require("./users/users.module");
+const admin_module_1 = require("./admin/admin.module");
 const user_entity_1 = require("./users/entities/user.entity");
 const job_entity_1 = require("./jobs/entities/job.entity");
+const audit_log_entity_1 = require("./audit-log/audit-log.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -37,12 +39,13 @@ exports.AppModule = AppModule = __decorate([
                 username: process.env.DB_USERNAME || 'postgres',
                 password: process.env.DB_PASSWORD || 'password',
                 database: process.env.DB_NAME || 'pipeline',
-                entities: [user_entity_1.User, job_entity_1.Job],
+                entities: [user_entity_1.User, job_entity_1.Job, audit_log_entity_1.AuditLog],
                 synchronize: process.env.NODE_ENV !== 'production',
             }),
             auth_module_1.AuthModule,
             jobs_module_1.JobsModule,
             users_module_1.UsersModule,
+            admin_module_1.AdminModule,
         ],
         providers: [{ provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
     })

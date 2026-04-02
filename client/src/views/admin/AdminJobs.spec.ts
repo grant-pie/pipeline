@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import AdminJobs from './AdminJobs.vue';
 
-const mockListJobs = vi.fn();
-const mockDeleteJob = vi.fn();
-const mockBulkDeleteJobs = vi.fn();
+const mockListJobs = vi.hoisted(() => vi.fn());
+const mockDeleteJob = vi.hoisted(() => vi.fn());
+const mockBulkDeleteJobs = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/admin', () => ({
   adminApi: {

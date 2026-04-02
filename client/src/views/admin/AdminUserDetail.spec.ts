@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import AdminUserDetail from './AdminUserDetail.vue';
 
-const mockGetUser = vi.fn();
-const mockSetRole = vi.fn();
-const mockSuspendUser = vi.fn();
-const mockUnsuspendUser = vi.fn();
-const mockForceVerify = vi.fn();
-const mockResendVerification = vi.fn();
-const mockTriggerPasswordReset = vi.fn();
-const mockDeleteUser = vi.fn();
+const mockGetUser = vi.hoisted(() => vi.fn());
+const mockSetRole = vi.hoisted(() => vi.fn());
+const mockSuspendUser = vi.hoisted(() => vi.fn());
+const mockUnsuspendUser = vi.hoisted(() => vi.fn());
+const mockForceVerify = vi.hoisted(() => vi.fn());
+const mockResendVerification = vi.hoisted(() => vi.fn());
+const mockTriggerPasswordReset = vi.hoisted(() => vi.fn());
+const mockDeleteUser = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/admin', () => ({
   adminApi: {

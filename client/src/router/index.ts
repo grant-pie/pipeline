@@ -79,6 +79,11 @@ const router = createRouter({
           component: () => import('@/views/admin/AdminJobs.vue'),
         },
         {
+          path: 'jobs/:id',
+          name: 'admin-job-detail',
+          component: () => import('@/views/admin/AdminJobDetail.vue'),
+        },
+        {
           path: 'audit-log',
           name: 'admin-audit-log',
           component: () => import('@/views/admin/AdminAuditLog.vue'),

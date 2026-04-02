@@ -19,6 +19,7 @@ export declare class AuthService {
         user: {
             id: string;
             email: string;
+            role: import("../users/entities/user.entity").UserRole;
             createdAt: Date;
         };
     }>;

@@ -54,13 +54,16 @@ let AuthService = AuthService_1 = class AuthService {
         if (!passwordMatch) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
+        if (user.isSuspended) {
+            throw new common_1.ForbiddenException('Your account has been suspended. Please contact support.');
+        }
         if (!user.isVerified) {
             throw new common_1.ForbiddenException('Please verify your email before signing in.');
         }
-        const token = this.jwtService.sign({ sub: user.id, email: user.email });
+        const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
         return {
             accessToken: token,
-            user: { id: user.id, email: user.email, createdAt: user.createdAt },
+            user: { id: user.id, email: user.email, role: user.role, createdAt: user.createdAt },
         };
     }
     async verifyEmail(token) {

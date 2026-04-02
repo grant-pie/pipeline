@@ -15,6 +15,7 @@ export declare class AuthController {
         user: {
             id: string;
             email: string;
+            role: import("../users/entities/user.entity").UserRole;
             createdAt: Date;
         };
     }>;

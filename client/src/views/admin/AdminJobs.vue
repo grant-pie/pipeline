@@ -46,6 +46,9 @@
             <td class="cell-muted">{{ job.user?.email ?? '—' }}</td>
             <td class="cell-muted">{{ formatDate(job.dateApplied) }}</td>
             <td class="cell-actions">
+              <RouterLink :to="{ name: 'admin-job-detail', params: { id: job.id } }" class="btn-ghost btn-sm">
+                View
+              </RouterLink>
               <button class="btn-danger btn-sm" @click="handleDelete(job.id)" :disabled="deleting === job.id">
                 Delete
               </button>
