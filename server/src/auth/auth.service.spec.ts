@@ -25,6 +25,8 @@ function makeUser(overrides: Partial<User> = {}): User {
     id: 'user-uuid-1',
     email: 'test@example.com',
     password: '$2a$10$hashedpassword',
+    role: 'user' as any,
+    isSuspended: false,
     isVerified: true,
     verificationToken: null,
     resetToken: null,
@@ -167,17 +169,70 @@ describe('AuthService', () => {
       const result = await service.login({ email: user.email, password: plainPassword });
 
       expect(result.accessToken).toBe('signed.jwt.token');
-      expect(result.user).toEqual({ id: user.id, email: user.email, createdAt: user.createdAt });
+      expect(result.user).toEqual({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+      });
     });
 
-    it('signs the JWT with { sub: id, email }', async () => {
-      const user = makeUser({ password: hashedPassword, isVerified: true });
+    it('signs the JWT with { sub, email, role }', async () => {
+      const user = makeUser({ password: hashedPassword, isVerified: true, role: 'user' as any });
       usersService.findByEmail.mockResolvedValue(user);
       jwtService.sign.mockReturnValue('signed.jwt.token');
 
       await service.login({ email: user.email, password: plainPassword });
 
-      expect(jwtService.sign).toHaveBeenCalledWith({ sub: user.id, email: user.email });
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      });
+    });
+
+    it('includes role in the returned user object', async () => {
+      const user = makeUser({ password: hashedPassword, isVerified: true, role: 'admin' as any });
+      usersService.findByEmail.mockResolvedValue(user);
+      jwtService.sign.mockReturnValue('token');
+
+      const result = await service.login({ email: user.email, password: plainPassword });
+
+      expect(result.user.role).toBe('admin');
+    });
+
+    it('throws ForbiddenException when user is suspended', async () => {
+      const user = makeUser({ password: hashedPassword, isSuspended: true, isVerified: true });
+      usersService.findByEmail.mockResolvedValue(user);
+
+      await expect(
+        service.login({ email: user.email, password: plainPassword }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('suspension check happens after password validation — wrong password still gives UnauthorizedException', async () => {
+      const user = makeUser({ password: hashedPassword, isSuspended: true, isVerified: true });
+      usersService.findByEmail.mockResolvedValue(user);
+
+      await expect(
+        service.login({ email: user.email, password: 'wrongpassword' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('suspension check happens before the verified check — suspended unverified user gets ForbiddenException about suspension', async () => {
+      const user = makeUser({
+        password: hashedPassword,
+        isSuspended: true,
+        isVerified: false,
+      });
+      usersService.findByEmail.mockResolvedValue(user);
+
+      const error: any = await service
+        .login({ email: user.email, password: plainPassword })
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(ForbiddenException);
+      expect(error.message).toMatch(/suspended/i);
     });
 
     it('never exposes the password field in the response', async () => {
