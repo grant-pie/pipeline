@@ -2,6 +2,9 @@
   <nav class="navbar">
     <RouterLink to="/dashboard" class="brand">Pipeline</RouterLink>
     <div class="nav-right">
+      <RouterLink v-if="authStore.isAdmin" :to="{ name: 'admin-dashboard' }" class="admin-link">
+        Admin
+      </RouterLink>
       <span class="nav-email">{{ authStore.user?.email }}</span>
       <button class="btn-ghost btn-sm" @click="handleLogout">Sign out</button>
     </div>
@@ -57,5 +60,22 @@ function handleLogout() {
 .nav-email {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.admin-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background: rgba(91, 138, 240, 0.1);
+  border: 1px solid rgba(91, 138, 240, 0.2);
+  border-radius: 4px;
+  padding: 3px 9px;
+  text-decoration: none;
+  letter-spacing: 0.2px;
+}
+
+.admin-link:hover {
+  background: rgba(91, 138, 240, 0.18);
+  text-decoration: none;
 }
 </style>
