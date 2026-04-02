@@ -11,6 +11,8 @@ import { User, UserRole } from '../users/entities/user.entity';
 import { Job } from '../jobs/entities/job.entity';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditAction } from '../audit-log/audit-log.entity';
 
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -22,6 +24,11 @@ function sanitizeUser(user: User) {
   return safe;
 }
 
+export interface AdminActor {
+  id: string;
+  email: string;
+}
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -29,6 +36,7 @@ export class AdminService {
     @InjectRepository(Job) private readonly jobsRepo: Repository<Job>,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   // ─── Stats ────────────────────────────────────────────────────────────────
@@ -107,67 +115,144 @@ export class AdminService {
     return sanitizeUser(user);
   }
 
-  async setRole(adminId: string, targetId: string, role: UserRole) {
-    if (adminId === targetId && role !== UserRole.ADMIN) {
+  async setRole(actor: AdminActor, targetId: string, role: UserRole) {
+    if (actor.id === targetId && role !== UserRole.ADMIN) {
       throw new ForbiddenException('Admins cannot demote themselves');
     }
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
+
     await this.usersRepo.update(targetId, { role });
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.SET_ROLE,
+      targetType: 'user',
+      targetId,
+      metadata: { targetEmail: user.email, fromRole: user.role, toRole: role },
+    });
+
     return { message: `User role updated to ${role}` };
   }
 
-  async suspendUser(adminId: string, targetId: string) {
-    if (adminId === targetId) {
+  async suspendUser(actor: AdminActor, targetId: string) {
+    if (actor.id === targetId) {
       throw new ForbiddenException('Admins cannot suspend themselves');
     }
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
+
     await this.usersRepo.update(targetId, { isSuspended: true });
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.SUSPEND_USER,
+      targetType: 'user',
+      targetId,
+      metadata: { targetEmail: user.email },
+    });
+
     return { message: 'User suspended' };
   }
 
-  async unsuspendUser(targetId: string) {
+  async unsuspendUser(actor: AdminActor, targetId: string) {
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
+
     await this.usersRepo.update(targetId, { isSuspended: false });
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.UNSUSPEND_USER,
+      targetType: 'user',
+      targetId,
+      metadata: { targetEmail: user.email },
+    });
+
     return { message: 'User unsuspended' };
   }
 
-  async deleteUser(adminId: string, targetId: string) {
-    if (adminId === targetId) {
+  async deleteUser(actor: AdminActor, targetId: string) {
+    if (actor.id === targetId) {
       throw new ForbiddenException('Admins cannot delete themselves');
     }
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
+
     await this.usersService.deleteById(targetId);
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.DELETE_USER,
+      targetType: 'user',
+      targetId,
+      metadata: { targetEmail: user.email },
+    });
+
     return { message: 'User deleted' };
   }
 
-  async forceVerifyUser(targetId: string) {
+  async forceVerifyUser(actor: AdminActor, targetId: string) {
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
+
     await this.usersService.verifyUser(targetId);
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.FORCE_VERIFY,
+      targetType: 'user',
+      targetId,
+      metadata: { targetEmail: user.email },
+    });
+
     return { message: 'User verified' };
   }
 
-  async resendVerification(targetId: string) {
+  async resendVerification(actor: AdminActor, targetId: string) {
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
     if (user.isVerified) throw new BadRequestException('User is already verified');
+
     const token = crypto.randomBytes(32).toString('hex');
     await this.usersService.setVerificationToken(targetId, hashToken(token));
     await this.mailService.sendVerificationEmail(user.email, token);
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.RESEND_VERIFICATION,
+      targetType: 'user',
+      targetId,
+      metadata: { targetEmail: user.email },
+    });
+
     return { message: 'Verification email sent' };
   }
 
-  async triggerPasswordReset(targetId: string) {
+  async triggerPasswordReset(actor: AdminActor, targetId: string) {
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
+
     const token = crypto.randomBytes(32).toString('hex');
     const expiry = new Date(Date.now() + 60 * 60 * 1000);
     await this.usersService.setResetToken(targetId, hashToken(token), expiry);
     await this.mailService.sendPasswordReset(user.email, token);
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.TRIGGER_PASSWORD_RESET,
+      targetType: 'user',
+      targetId,
+      metadata: { targetEmail: user.email },
+    });
+
     return { message: 'Password reset email sent' };
   }
 
@@ -208,22 +293,60 @@ export class AdminService {
     };
   }
 
-  async updateJob(id: string, dto: Partial<Record<string, unknown>>) {
+  async updateJob(actor: AdminActor, id: string, dto: Partial<Record<string, unknown>>) {
     const job = await this.jobsRepo.findOne({ where: { id } });
     if (!job) throw new NotFoundException('Job not found');
+
     Object.assign(job, dto);
-    return this.jobsRepo.save(job);
+    const saved = await this.jobsRepo.save(job);
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.UPDATE_JOB,
+      targetType: 'job',
+      targetId: id,
+      metadata: { company: job.company, title: job.title, userId: job.userId, fields: Object.keys(dto) },
+    });
+
+    return saved;
   }
 
-  async deleteJob(id: string) {
+  async deleteJob(actor: AdminActor, id: string) {
     const job = await this.jobsRepo.findOne({ where: { id } });
     if (!job) throw new NotFoundException('Job not found');
+
     await this.jobsRepo.remove(job);
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.DELETE_JOB,
+      targetType: 'job',
+      targetId: id,
+      metadata: { company: job.company, title: job.title, userId: job.userId },
+    });
   }
 
-  async bulkDeleteJobs(ids: string[]) {
+  async bulkDeleteJobs(actor: AdminActor, ids: string[]) {
     if (!ids?.length) throw new BadRequestException('No job IDs provided');
+
     await this.jobsRepo.delete({ id: In(ids) });
+
+    this.auditLogService.log({
+      adminId: actor.id,
+      adminEmail: actor.email,
+      action: AuditAction.BULK_DELETE_JOBS,
+      targetType: 'job',
+      metadata: { count: ids.length, ids },
+    });
+
     return { message: `${ids.length} job(s) deleted` };
+  }
+
+  // ─── Audit Log ────────────────────────────────────────────────────────────
+
+  getAuditLog(page: number, limit: number) {
+    return this.auditLogService.findAll(page, limit);
   }
 }

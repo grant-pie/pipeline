@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
 import { User } from './users/entities/user.entity';
 import { Job } from './jobs/entities/job.entity';
+import { AuditLog } from './audit-log/audit-log.entity';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { Job } from './jobs/entities/job.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'password',
       database: process.env.DB_NAME || 'pipeline',
-      entities: [User, Job],
+      entities: [User, Job, AuditLog],
       synchronize: process.env.NODE_ENV !== 'production',
     }),
     AuthModule,

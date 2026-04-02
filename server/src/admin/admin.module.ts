@@ -6,9 +6,10 @@ import { User } from '../users/entities/user.entity';
 import { Job } from '../jobs/entities/job.entity';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Job]), UsersModule, MailModule],
+  imports: [TypeOrmModule.forFeature([User, Job]), UsersModule, MailModule, AuditLogModule],
   controllers: [AdminController],
   providers: [AdminService],
 })

@@ -19,6 +19,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { QueryJobsDto } from './dto/query-jobs.dto';
+import { QueryAuditLogDto } from './dto/query-audit-log.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateJobDto } from '../jobs/dto/update-job.dto';
 
@@ -33,6 +34,16 @@ export class AdminController {
   @Get('stats')
   getStats() {
     return this.adminService.getStats();
+  }
+
+  // ─── Audit Log ────────────────────────────────────────────────────────────
+
+  @Get('audit-log')
+  getAuditLog(@Query() query: QueryAuditLogDto) {
+    return this.adminService.getAuditLog(
+      Math.max(1, parseInt(String(query.page ?? 1), 10)),
+      Math.min(100, Math.max(1, parseInt(String(query.limit ?? 50), 10))),
+    );
   }
 
   // ─── Users ────────────────────────────────────────────────────────────────
@@ -53,38 +64,38 @@ export class AdminController {
 
   @Patch('users/:id/role')
   setRole(@Param('id') id: string, @Body() dto: UpdateUserRoleDto, @Request() req) {
-    return this.adminService.setRole(req.user.id, id, dto.role);
+    return this.adminService.setRole({ id: req.user.id, email: req.user.email }, id, dto.role);
   }
 
   @Patch('users/:id/suspend')
   suspendUser(@Param('id') id: string, @Request() req) {
-    return this.adminService.suspendUser(req.user.id, id);
+    return this.adminService.suspendUser({ id: req.user.id, email: req.user.email }, id);
   }
 
   @Patch('users/:id/unsuspend')
-  unsuspendUser(@Param('id') id: string) {
-    return this.adminService.unsuspendUser(id);
+  unsuspendUser(@Param('id') id: string, @Request() req) {
+    return this.adminService.unsuspendUser({ id: req.user.id, email: req.user.email }, id);
   }
 
   @Delete('users/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteUser(@Param('id') id: string, @Request() req) {
-    return this.adminService.deleteUser(req.user.id, id);
+    return this.adminService.deleteUser({ id: req.user.id, email: req.user.email }, id);
   }
 
   @Post('users/:id/verify')
-  forceVerify(@Param('id') id: string) {
-    return this.adminService.forceVerifyUser(id);
+  forceVerify(@Param('id') id: string, @Request() req) {
+    return this.adminService.forceVerifyUser({ id: req.user.id, email: req.user.email }, id);
   }
 
   @Post('users/:id/resend-verification')
-  resendVerification(@Param('id') id: string) {
-    return this.adminService.resendVerification(id);
+  resendVerification(@Param('id') id: string, @Request() req) {
+    return this.adminService.resendVerification({ id: req.user.id, email: req.user.email }, id);
   }
 
   @Post('users/:id/reset-password')
-  triggerPasswordReset(@Param('id') id: string) {
-    return this.adminService.triggerPasswordReset(id);
+  triggerPasswordReset(@Param('id') id: string, @Request() req) {
+    return this.adminService.triggerPasswordReset({ id: req.user.id, email: req.user.email }, id);
   }
 
   // ─── Jobs ─────────────────────────────────────────────────────────────────
@@ -105,18 +116,22 @@ export class AdminController {
   }
 
   @Patch('jobs/:id')
-  updateJob(@Param('id') id: string, @Body() dto: UpdateJobDto) {
-    return this.adminService.updateJob(id, dto as Partial<Record<string, unknown>>);
+  updateJob(@Param('id') id: string, @Body() dto: UpdateJobDto, @Request() req) {
+    return this.adminService.updateJob(
+      { id: req.user.id, email: req.user.email },
+      id,
+      dto as Partial<Record<string, unknown>>,
+    );
   }
 
   @Delete('jobs/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteJob(@Param('id') id: string) {
-    return this.adminService.deleteJob(id);
+  deleteJob(@Param('id') id: string, @Request() req) {
+    return this.adminService.deleteJob({ id: req.user.id, email: req.user.email }, id);
   }
 
   @Delete('jobs')
-  bulkDeleteJobs(@Body('ids') ids: string[]) {
-    return this.adminService.bulkDeleteJobs(ids);
+  bulkDeleteJobs(@Body('ids') ids: string[], @Request() req) {
+    return this.adminService.bulkDeleteJobs({ id: req.user.id, email: req.user.email }, ids);
   }
 }
