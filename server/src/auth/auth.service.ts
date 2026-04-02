@@ -73,6 +73,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (user.isSuspended) {
+      throw new ForbiddenException('Your account has been suspended. Please contact support.');
+    }
+
     if (!user.isVerified) {
       throw new ForbiddenException('Please verify your email before signing in.');
     }

@@ -27,6 +27,9 @@ export class User {
   role: UserRole;
 
   @Column({ default: false })
+  isSuspended: boolean;
+
+  @Column({ default: false })
   isVerified: boolean;
 
   @Column({ nullable: true })
