@@ -175,4 +175,18 @@ describe('api client', () => {
     const { api } = await import('./client');
     await expect(api.get('/jobs')).rejects.toThrow('The server is currently unavailable. Please try again later.');
   });
+
+  it('api.delete sends a JSON body when one is provided', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      status: 200,
+      ok: true,
+      json: vi.fn().mockResolvedValue({ message: 'ok' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { api } = await import('./client');
+    await api.delete('/admin/jobs', { ids: ['j1', 'j2'] });
+    const [, options] = fetchMock.mock.calls[0];
+    expect(options.method).toBe('DELETE');
+    expect(JSON.parse(options.body)).toEqual({ ids: ['j1', 'j2'] });
+  });
 });

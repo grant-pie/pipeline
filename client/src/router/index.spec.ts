@@ -3,9 +3,10 @@ import { createRouter, createMemoryHistory } from 'vue-router';
 
 // Control authentication state per-test
 let isAuthenticated = false;
+let isAdmin = false;
 
 vi.mock('@/stores/auth', () => ({
-  useAuthStore: () => ({ isAuthenticated }),
+  useAuthStore: () => ({ isAuthenticated, isAdmin }),
 }));
 
 // Import routes separately from the singleton router so we can build
@@ -21,8 +22,9 @@ async function buildRouter(authenticated: boolean) {
 // Lightweight component stubs — the guard tests only care about navigation
 const Stub = { template: '<div />' };
 
-async function buildIsolatedRouter(authenticated: boolean) {
+async function buildIsolatedRouter(authenticated: boolean, admin = false) {
   isAuthenticated = authenticated;
+  isAdmin = admin;
   vi.resetModules();
 
   // Pull the raw routes array out so we can create a memory-history router
@@ -79,6 +81,32 @@ describe('Router navigation guards', () => {
       const router = await buildIsolatedRouter(false);
       await router.push('/register');
       expect(router.currentRoute.value.name).toBe('register');
+    });
+  });
+
+  describe('requiresAdmin routes', () => {
+    it('redirects unauthenticated user from /admin to /login', async () => {
+      const router = await buildIsolatedRouter(false, false);
+      await router.push('/admin');
+      expect(router.currentRoute.value.name).toBe('login');
+    });
+
+    it('redirects authenticated non-admin user from /admin to /dashboard', async () => {
+      const router = await buildIsolatedRouter(true, false);
+      await router.push('/admin');
+      expect(router.currentRoute.value.name).toBe('dashboard');
+    });
+
+    it('allows an authenticated admin to reach /admin', async () => {
+      const router = await buildIsolatedRouter(true, true);
+      await router.push('/admin');
+      expect(router.currentRoute.value.name).toBe('admin-dashboard');
+    });
+
+    it('redirects non-admin from /admin/users to /dashboard', async () => {
+      const router = await buildIsolatedRouter(true, false);
+      await router.push('/admin/users');
+      expect(router.currentRoute.value.name).toBe('dashboard');
     });
   });
 

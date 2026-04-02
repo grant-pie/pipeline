@@ -4,6 +4,7 @@ import NavBar from './NavBar.vue';
 
 const mockPush = vi.fn();
 const mockLogout = vi.fn();
+let mockIsAdmin = false;
 
 vi.mock('vue-router', async () => {
   const actual = await vi.importActual<typeof import('vue-router')>('vue-router');
@@ -13,11 +14,14 @@ vi.mock('vue-router', async () => {
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
     user: { id: 'user-1', email: 'test@example.com', createdAt: '2026-01-01' },
+    isAdmin: mockIsAdmin,
     logout: mockLogout,
   }),
 }));
 
-const stubs = { RouterLink: { template: '<a><slot /></a>' } };
+const stubs = {
+  RouterLink: { template: '<a :href="to" :class="$attrs.class"><slot /></a>', props: ['to'] },
+};
 
 describe('NavBar', () => {
   it("renders the authenticated user's email", () => {
@@ -35,5 +39,25 @@ describe('NavBar', () => {
     const wrapper = mount(NavBar, { global: { stubs } });
     await wrapper.find('button').trigger('click');
     expect(mockPush).toHaveBeenCalledWith({ name: 'login' });
+  });
+
+  it('does not render the Admin link when isAdmin is false', () => {
+    mockIsAdmin = false;
+    const wrapper = mount(NavBar, { global: { stubs } });
+    expect(wrapper.find('.admin-link').exists()).toBe(false);
+  });
+
+  it('renders the Admin link when isAdmin is true', () => {
+    mockIsAdmin = true;
+    const wrapper = mount(NavBar, { global: { stubs } });
+    expect(wrapper.find('.admin-link').exists()).toBe(true);
+  });
+
+  it('Admin link points to admin-dashboard route', () => {
+    mockIsAdmin = true;
+    const wrapper = mount(NavBar, { global: { stubs } });
+    // RouterLink stub renders to as href attribute
+    const adminLink = wrapper.find('.admin-link');
+    expect(adminLink.attributes('href')).toContain('admin-dashboard');
   });
 });

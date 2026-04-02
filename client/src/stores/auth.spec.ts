@@ -115,4 +115,34 @@ describe('useAuthStore', () => {
     store.logout();
     expect(store.isAuthenticated).toBe(false);
   });
+
+  // ── isAdmin ───────────────────────────────────────────────────────────────
+
+  it('isAdmin is false when user is null', () => {
+    const store = useAuthStore();
+    expect(store.isAdmin).toBe(false);
+  });
+
+  it('isAdmin is false when user role is "user"', () => {
+    localStorage.setItem('token', 'tok');
+    localStorage.setItem('user', JSON.stringify({ id: 'u1', email: 'a@b.com', role: 'user', createdAt: '2026-01-01' }));
+    const store = useAuthStore();
+    expect(store.isAdmin).toBe(false);
+  });
+
+  it('isAdmin is true when user role is "admin"', () => {
+    localStorage.setItem('token', 'tok');
+    localStorage.setItem('user', JSON.stringify({ id: 'u1', email: 'a@b.com', role: 'admin', createdAt: '2026-01-01' }));
+    const store = useAuthStore();
+    expect(store.isAdmin).toBe(true);
+  });
+
+  it('isAdmin becomes false after logout', async () => {
+    localStorage.setItem('token', 'tok');
+    localStorage.setItem('user', JSON.stringify({ id: 'u1', email: 'a@b.com', role: 'admin', createdAt: '2026-01-01' }));
+    const store = useAuthStore();
+    expect(store.isAdmin).toBe(true);
+    store.logout();
+    expect(store.isAdmin).toBe(false);
+  });
 });
