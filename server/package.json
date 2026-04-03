@@ -12,6 +12,7 @@
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.json --no-coverage",
     "seed:users": "ts-node -r dotenv/config -r tsconfig-paths/register src/seeds/users.seed.ts",
+    "seed:audit-log": "ts-node -r dotenv/config -r tsconfig-paths/register src/seeds/audit-log.seed.ts",
     "seed:jobs": "ts-node -r dotenv/config -r tsconfig-paths/register src/seeds/jobs.seed.ts",
     "seed:admin": "ts-node -r dotenv/config -r tsconfig-paths/register src/seeds/admin.seed.ts",
     "make-admin": "ts-node -r dotenv/config -r tsconfig-paths/register src/scripts/make-admin.ts"
