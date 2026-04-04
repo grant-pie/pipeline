@@ -12,7 +12,8 @@
       "Bash(npx jest:*)",
       "Bash(node -e \"console.log\\(require\\('./node_modules/typeorm/package.json'\\).version\\)\")",
       "Bash(node -e \"console.log\\(require\\('./node_modules/pg/package.json'\\).version\\)\")",
-      "Bash(node --trace-deprecation -e ':*)"
+      "Bash(node --trace-deprecation -e ':*)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/typescript/package.json'\\).version\\)\")"
     ]
   }
 }

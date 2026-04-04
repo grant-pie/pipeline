@@ -10,7 +10,7 @@
         v-model="searchInput"
         type="search"
         class="search-input"
-        placeholder="Search by admin email or action…"
+        placeholder="Search by admin email, action, target or detail…"
       />
     </div>
 

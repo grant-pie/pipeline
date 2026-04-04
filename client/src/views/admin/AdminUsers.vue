@@ -14,7 +14,7 @@
         v-model="searchInput"
         type="search"
         class="search-input"
-        placeholder="Search by email…"
+        placeholder="Search by email or user ID…"
       />
     </div>
 

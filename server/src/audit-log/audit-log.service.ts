@@ -44,7 +44,13 @@ export class AuditLogService {
 
     if (search) {
       qb.where(
-        '(log.adminEmail ILIKE :search OR log.action::text ILIKE :search)',
+        `(
+          log.adminEmail ILIKE :search OR
+          log.action::text ILIKE :search OR
+          log.targetType ILIKE :search OR
+          log.targetId ILIKE :search OR
+          log.metadata::text ILIKE :search
+        )`,
         { search: `%${search}%` },
       );
     }

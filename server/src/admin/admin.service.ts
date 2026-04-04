@@ -93,7 +93,7 @@ export class AdminService {
       .take(limit);
 
     if (search) {
-      qb.where('user.email ILIKE :search', { search: `%${search}%` });
+      qb.where('(user.email ILIKE :search OR CAST(user.id AS text) ILIKE :search)', { search: `%${search}%` });
     }
 
     // jobCount is a mapped relation count — sort in memory when requested
