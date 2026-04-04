@@ -40,28 +40,46 @@ const generateFakeJob = (userId: string): Partial<Job> => ({
 });
 
 async function seed() {
-  const app = await NestFactory.createApplicationContext(AppModule);
+  const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error'] });
 
   const jobRepo = app.get<Repository<Job>>(getRepositoryToken(Job));
   const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
 
-  const users = await userRepo.find({ select: ['id'] });
-
-  if (users.length === 0) {
-    throw new Error('❌ No users found in the database. Create an account first.');
-  }
-
   const countArg = process.argv.find((a) => a.startsWith('--count='));
   const count = countArg ? parseInt(countArg.split('=')[1], 10) : 1;
 
-  const jobs = Array.from({ length: count }).map(() => {
-    const userId = faker.helpers.arrayElement(users).id;
-    return generateFakeJob(userId);
-  });
+  const emailArg = process.argv.find((a) => a.startsWith('--email='));
+  const email = emailArg?.split('=')[1]?.trim();
+
+  let userIds: string[];
+
+  if (email) {
+    const user = await userRepo.findOne({ where: { email }, select: ['id'] });
+    if (!user) {
+      console.error(`❌ No user found with email: ${email}`);
+      await app.close();
+      process.exit(1);
+    }
+    userIds = [user.id];
+    console.log(`📧 Seeding jobs for ${email}`);
+  } else {
+    const users = await userRepo.find({ select: ['id'] });
+    if (users.length === 0) {
+      console.error('❌ No users found in the database. Create an account first.');
+      await app.close();
+      process.exit(1);
+    }
+    userIds = users.map(u => u.id);
+  }
+
+  const jobs = Array.from({ length: count }).map(() =>
+    generateFakeJob(faker.helpers.arrayElement(userIds)),
+  );
 
   await jobRepo.save(jobs);
 
-  console.log(`✅ Seeded ${jobs.length} jobs across ${users.length} user(s)`);
+  const scope = email ? `for ${email}` : `across ${userIds.length} user(s)`;
+  console.log(`✅ Seeded ${jobs.length} job(s) ${scope}`);
 
   await app.close();
 }
