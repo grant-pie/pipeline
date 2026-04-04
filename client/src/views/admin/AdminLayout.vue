@@ -7,22 +7,22 @@
       </div>
       <ul class="admin-nav-links">
         <li>
-          <RouterLink :to="{ name: 'admin-dashboard' }" class="nav-link">
+          <RouterLink :to="{ name: 'admin-dashboard' }" class="nav-link" active-class="" :class="{ 'nav-link-active': isActive('admin-dashboard') }">
             Overview
           </RouterLink>
         </li>
         <li>
-          <RouterLink :to="{ name: 'admin-users' }" class="nav-link">
+          <RouterLink :to="{ name: 'admin-users' }" class="nav-link" active-class="" :class="{ 'nav-link-active': isActive('admin-users') }">
             Users
           </RouterLink>
         </li>
         <li>
-          <RouterLink :to="{ name: 'admin-jobs' }" class="nav-link">
+          <RouterLink :to="{ name: 'admin-jobs' }" class="nav-link" active-class="" :class="{ 'nav-link-active': isActive('admin-jobs') }">
             Jobs
           </RouterLink>
         </li>
         <li>
-          <RouterLink :to="{ name: 'admin-audit-log' }" class="nav-link">
+          <RouterLink :to="{ name: 'admin-audit-log' }" class="nav-link" active-class="" :class="{ 'nav-link-active': isActive('admin-audit-log') }">
             Audit Log
           </RouterLink>
         </li>
@@ -39,11 +39,23 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+
+const SECTION_ROUTES: Record<string, string[]> = {
+  'admin-dashboard': ['admin-dashboard'],
+  'admin-users':     ['admin-users', 'admin-user-detail'],
+  'admin-jobs':      ['admin-jobs', 'admin-job-detail'],
+  'admin-audit-log': ['admin-audit-log'],
+};
+
+function isActive(section: string) {
+  return SECTION_ROUTES[section]?.includes(route.name as string) ?? false;
+}
 
 function handleLogout() {
   authStore.logout();
@@ -126,7 +138,7 @@ function handleLogout() {
   text-decoration: none;
 }
 
-.nav-link.router-link-active {
+.nav-link.nav-link-active {
   background: var(--surface-2);
   color: var(--text);
 }
