@@ -2,8 +2,12 @@
   <nav class="navbar">
     <RouterLink to="/dashboard" class="brand">Pipeline</RouterLink>
     <div class="nav-right">
-      <RouterLink v-if="authStore.isAdmin" :to="{ name: 'admin-dashboard' }" class="admin-link">
-        Admin
+      <RouterLink
+        v-if="authStore.isAdmin"
+        :to="isOnAdminPages ? { name: 'dashboard' } : { name: 'admin-dashboard' }"
+        class="admin-link"
+      >
+        {{ isOnAdminPages ? 'Dashboard' : 'Admin' }}
       </RouterLink>
       <span class="nav-email">{{ authStore.user?.email }}</span>
       <button class="btn-ghost btn-sm" @click="handleLogout">Sign out</button>
@@ -12,11 +16,15 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+
+const isOnAdminPages = computed(() => route.path.startsWith('/admin'));
 
 function handleLogout() {
   authStore.logout();
