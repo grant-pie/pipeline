@@ -22,6 +22,7 @@
       <table class="data-table">
         <thead>
           <tr>
+            <th>User ID</th>
             <th @click="setSort('email')" class="sortable">
               Email <span class="sort-icon">{{ sortIcon('email') }}</span>
             </th>
@@ -42,6 +43,11 @@
         </thead>
         <tbody>
           <tr v-for="user in users" :key="user.id">
+            <td class="cell-id">
+              <span class="user-id" :title="user.id" @click="copyId(user.id)">
+                {{ user.id.slice(0, 8) }}…
+              </span>
+            </td>
             <td class="cell-email">{{ user.email }}</td>
             <td>
               <span class="badge" :class="user.role === 'admin' ? 'badge-admin' : 'badge-user'">
@@ -133,6 +139,10 @@ function sortIcon(col: string) {
 function prev() { page.value--; load(); }
 function next() { page.value++; load(); }
 
+function copyId(id: string) {
+  navigator.clipboard.writeText(id);
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -199,6 +209,22 @@ onMounted(load);
 
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--surface); }
+
+.cell-id { width: 90px; }
+
+.user-id {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.user-id:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
 
 .cell-email { font-weight: 400; }
 .cell-muted { color: var(--text-muted); }
