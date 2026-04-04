@@ -43,6 +43,9 @@ export class AdminController {
     return this.adminService.getAuditLog(
       Math.max(1, parseInt(String(query.page ?? 1), 10)),
       Math.min(100, Math.max(1, parseInt(String(query.limit ?? 50), 10))),
+      query.search?.trim() || undefined,
+      query.sortBy || undefined,
+      query.sortOrder || undefined,
     );
   }
 

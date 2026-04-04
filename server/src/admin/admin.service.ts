@@ -299,9 +299,10 @@ export class AdminService {
 
     if (userId) qb.andWhere('job.userId = :userId', { userId });
     if (search) {
-      qb.andWhere('(job.company ILIKE :search OR job.title ILIKE :search)', {
-        search: `%${search}%`,
-      });
+      qb.andWhere(
+        '(job.company ILIKE :search OR job.title ILIKE :search OR user.email ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
     const [data, total] = await qb.getManyAndCount();
@@ -377,7 +378,7 @@ export class AdminService {
 
   // ─── Audit Log ────────────────────────────────────────────────────────────
 
-  getAuditLog(page: number, limit: number) {
-    return this.auditLogService.findAll(page, limit);
+  getAuditLog(page: number, limit: number, search?: string, sortBy?: string, sortOrder?: 'ASC' | 'DESC') {
+    return this.auditLogService.findAll(page, limit, search, sortBy, sortOrder);
   }
 }

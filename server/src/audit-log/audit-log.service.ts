@@ -32,12 +32,24 @@ export class AuditLogService {
       );
   }
 
-  async findAll(page: number, limit: number) {
-    const [data, total] = await this.repo.findAndCount({
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+  async findAll(page: number, limit: number, search?: string, sortBy = 'createdAt', sortOrder: 'ASC' | 'DESC' = 'DESC') {
+    const SORTABLE = new Set(['adminEmail', 'action', 'targetType', 'createdAt']);
+    const sortCol = SORTABLE.has(sortBy) ? `log.${sortBy}` : 'log.createdAt';
+
+    const qb = this.repo
+      .createQueryBuilder('log')
+      .orderBy(sortCol, sortOrder)
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (search) {
+      qb.where(
+        '(log.adminEmail ILIKE :search OR log.action ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    const [data, total] = await qb.getManyAndCount();
     return { data, total, hasMore: page * limit < total };
   }
 }

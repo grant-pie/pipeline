@@ -64,8 +64,13 @@ export const adminApi = {
   getStats: () => api.get<AdminStats>('/admin/stats'),
 
   // Audit log
-  getAuditLog: (page = 1, limit = 50) =>
-    api.get<PaginatedResponse<AuditLogEntry>>(`/admin/audit-log?page=${page}&limit=${limit}`),
+  getAuditLog: (page = 1, limit = 50, search?: string, sortBy?: string, sortOrder?: string) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    if (sortBy) params.set('sortBy', sortBy);
+    if (sortOrder) params.set('sortOrder', sortOrder);
+    return api.get<PaginatedResponse<AuditLogEntry>>(`/admin/audit-log?${params}`);
+  },
 
   // Users
   listUsers: (page = 1, limit = 20, search?: string, sortBy?: string, sortOrder?: string) => {

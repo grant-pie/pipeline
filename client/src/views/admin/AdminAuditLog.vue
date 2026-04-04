@@ -5,6 +5,15 @@
       <span class="total-label" v-if="total > 0">{{ total }} entries</span>
     </div>
 
+    <div class="toolbar">
+      <input
+        v-model="searchInput"
+        type="search"
+        class="search-input"
+        placeholder="Search by admin email or action…"
+      />
+    </div>
+
     <div v-if="loading" class="state-msg">Loading…</div>
     <div v-else-if="error" class="state-msg" style="color: var(--danger)">{{ error }}</div>
     <div v-else-if="entries.length === 0" class="state-msg">No audit log entries yet.</div>
@@ -13,10 +22,18 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Time</th>
-            <th>Admin</th>
-            <th>Action</th>
-            <th>Target</th>
+            <th @click="setSort('createdAt')" class="sortable">
+              Time <span class="sort-icon">{{ sortIcon('createdAt') }}</span>
+            </th>
+            <th @click="setSort('adminEmail')" class="sortable">
+              Admin <span class="sort-icon">{{ sortIcon('adminEmail') }}</span>
+            </th>
+            <th @click="setSort('action')" class="sortable">
+              Action <span class="sort-icon">{{ sortIcon('action') }}</span>
+            </th>
+            <th @click="setSort('targetType')" class="sortable">
+              Target <span class="sort-icon">{{ sortIcon('targetType') }}</span>
+            </th>
             <th>Detail</th>
           </tr>
         </thead>
@@ -48,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { adminApi, type AuditLogEntry } from '@/api/admin';
 
 const entries = ref<AuditLogEntry[]>([]);
@@ -57,12 +74,22 @@ const error = ref('');
 const page = ref(1);
 const hasMore = ref(false);
 const total = ref(0);
+const searchInput = ref('');
+const sortBy = ref('createdAt');
+const sortOrder = ref<'ASC' | 'DESC'>('DESC');
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const res = await adminApi.getAuditLog(page.value, 50);
+    const res = await adminApi.getAuditLog(
+      page.value, 50,
+      searchInput.value.trim() || undefined,
+      sortBy.value,
+      sortOrder.value,
+    );
     entries.value = res.data;
     total.value = res.total;
     hasMore.value = res.hasMore;
@@ -73,8 +100,29 @@ async function load() {
   }
 }
 
+watch(searchInput, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { page.value = 1; load(); }, 300);
+});
+
 function prev() { page.value--; load(); }
 function next() { page.value++; load(); }
+
+function setSort(col: string) {
+  if (sortBy.value === col) {
+    sortOrder.value = sortOrder.value === 'ASC' ? 'DESC' : 'ASC';
+  } else {
+    sortBy.value = col;
+    sortOrder.value = 'ASC';
+  }
+  page.value = 1;
+  load();
+}
+
+function sortIcon(col: string) {
+  if (sortBy.value !== col) return '↕';
+  return sortOrder.value === 'ASC' ? '↑' : '↓';
+}
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -121,6 +169,37 @@ onMounted(load);
 
 <style scoped>
 .total-label { font-size: 13px; color: var(--text-muted); }
+
+.toolbar { margin-bottom: 24px; }
+
+.search-input {
+  max-width: 300px;
+  padding: 7px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+
+.search-input:focus { border-color: var(--accent); }
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable:hover { color: var(--text); }
+
+.sort-icon {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.6;
+}
 
 .data-table {
   width: 100%;
