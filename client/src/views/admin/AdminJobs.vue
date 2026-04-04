@@ -73,18 +73,18 @@
       </table>
 
       <div class="table-footer">
+        <div class="pagination">
+          <button class="btn-ghost btn-sm" :disabled="page === 1" @click="prev">← Prev</button>
+          <span class="page-info">Page {{ page }}</span>
+          <button class="btn-ghost btn-sm" :disabled="!hasMore" @click="next">Next →</button>
+        </div>
+
         <div class="bulk-actions" v-if="selected.length > 0">
           <span class="selected-count">{{ selected.length }} selected</span>
           <button class="btn-danger btn-sm" @click="handleBulkDelete" :disabled="bulkDeleting">
             {{ bulkDeleting ? 'Deleting…' : `Delete selected` }}
           </button>
           <button class="btn-ghost btn-sm" @click="selected = []">Clear</button>
-        </div>
-
-        <div class="pagination">
-          <button class="btn-ghost btn-sm" :disabled="page === 1" @click="prev">← Prev</button>
-          <span class="page-info">Page {{ page }}</span>
-          <button class="btn-ghost btn-sm" :disabled="!hasMore" @click="next">Next →</button>
         </div>
       </div>
     </template>
