@@ -5,10 +5,11 @@ import { UpdateJobDto } from './dto/update-job.dto';
 export declare class JobsService {
     private readonly jobsRepository;
     constructor(jobsRepository: Repository<Job>);
-    findAll(userId: string, page: number, limit: number, search?: string): Promise<{
+    findAll(userId: string, page: number, limit: number, search?: string, status?: string): Promise<{
         data: Job[];
         total: number;
         hasMore: boolean;
+        statusCounts: Record<string, number>;
     }>;
     findOne(id: string, userId: string): Promise<Job>;
     create(dto: CreateJobDto, userId: string): Promise<Job>;

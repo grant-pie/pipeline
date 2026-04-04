@@ -16,27 +16,55 @@ export class JobsService {
     private readonly jobsRepository: Repository<Job>,
   ) {}
 
-  async findAll(userId: string, page: number, limit: number, search?: string): Promise<{ data: Job[]; total: number; hasMore: boolean }> {
+  async findAll(userId: string, page: number, limit: number, search?: string, status?: string): Promise<{ data: Job[]; total: number; hasMore: boolean; statusCounts: Record<string, number> }> {
+    // Base query scoped to user + optional search (no status filter) — used for counts
+    const baseQb = this.jobsRepository
+      .createQueryBuilder('job')
+      .where('job.userId = :userId', { userId });
+
     if (search) {
-      const data = await this.jobsRepository
-        .createQueryBuilder('job')
-        .where('job.userId = :userId', { userId })
-        .andWhere(
-          '(job.company ILIKE :search OR job.title ILIKE :search OR CAST(job."dateApplied" AS TEXT) ILIKE :search)',
-          { search: `%${search}%` },
-        )
-        .orderBy('job.createdAt', 'DESC')
-        .getMany();
-      return { data, total: data.length, hasMore: false };
+      baseQb.andWhere(
+        '(job.company ILIKE :search OR job.title ILIKE :search OR CAST(job."dateApplied" AS TEXT) ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
-    const [data, total] = await this.jobsRepository.findAndCount({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-    return { data, total, hasMore: page * limit < total };
+    const countsRaw = await baseQb
+      .select('job.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('job.status')
+      .getRawMany<{ status: string; count: string }>();
+
+    const statusCounts: Record<string, number> = {};
+    for (const row of countsRaw) {
+      statusCounts[row.status] = parseInt(row.count, 10);
+    }
+
+    // Data query — adds status filter and pagination on top of base
+    const dataQb = this.jobsRepository
+      .createQueryBuilder('job')
+      .where('job.userId = :userId', { userId })
+      .orderBy('job.createdAt', 'DESC');
+
+    if (search) {
+      dataQb.andWhere(
+        '(job.company ILIKE :search OR job.title ILIKE :search OR CAST(job."dateApplied" AS TEXT) ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    if (status) {
+      dataQb.andWhere('job.status = :status', { status });
+    }
+
+    if (search) {
+      const data = await dataQb.getMany();
+      return { data, total: data.length, hasMore: false, statusCounts };
+    }
+
+    dataQb.skip((page - 1) * limit).take(limit);
+    const [data, total] = await dataQb.getManyAndCount();
+    return { data, total, hasMore: page * limit < total, statusCounts };
   }
 
   async findOne(id: string, userId: string): Promise<Job> {

@@ -27,7 +27,7 @@
           @click="activeFilter = s.value"
         >
           {{ s.label }}
-          <span class="filter-count">{{ countByStatus(s.value) }}</span>
+          <span class="filter-count">{{ s.value === 'all' ? jobsStore.total : (jobsStore.statusCounts[s.value] ?? 0) }}</span>
         </button>
       </div>
     </div>
@@ -41,7 +41,7 @@
         <RouterLink to="/jobs/new">Add your first application</RouterLink> to get started.
       </p>
     </div>
-    <div v-else-if="filteredJobs.length === 0" class="empty-state">
+    <div v-else-if="jobsStore.jobs.length === 0" class="empty-state">
       <p class="empty-title">No results</p>
       <p class="empty-sub">No applications match your search.</p>
     </div>
@@ -50,7 +50,7 @@
     <div v-else class="job-list" :class="{ 'job-list--searching': jobsStore.searching }">
       <p v-if="deleteError" class="state-msg error-msg">{{ deleteError }}</p>
       <JobCard
-        v-for="job in filteredJobs"
+        v-for="job in jobsStore.jobs"
         :key="job.id"
         :job="job"
         @delete="handleDelete"
@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useJobsStore } from '@/stores/jobs';
 import JobCard from '@/components/JobCard.vue';
 import type { JobStatus } from '@/types';
@@ -83,29 +83,30 @@ const deleteError = ref('');
 const sentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
-const filteredJobs = computed(() =>
-  activeFilter.value === 'all'
-    ? jobsStore.jobs
-    : jobsStore.jobs.filter((j) => j.status === activeFilter.value),
-);
+function statusParam() {
+  return activeFilter.value === 'all' ? undefined : activeFilter.value;
+}
+
+watch(activeFilter, () => {
+  if (search.value.trim()) {
+    jobsStore.searchJobs(search.value.trim(), statusParam());
+  } else {
+    jobsStore.fetchJobs(statusParam());
+  }
+});
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 watch(search, (q) => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
     if (q.trim()) {
-      jobsStore.searchJobs(q.trim());
+      jobsStore.searchJobs(q.trim(), statusParam());
     } else {
-      jobsStore.fetchJobs();
+      jobsStore.fetchJobs(statusParam());
     }
   }, 300);
 });
 
-function countByStatus(status: JobStatus | 'all'): number {
-  return status === 'all'
-    ? jobsStore.jobs.length
-    : jobsStore.jobs.filter((j) => j.status === status).length;
-}
 
 async function handleDelete(id: string) {
   if (!confirm('Delete this application?')) return;

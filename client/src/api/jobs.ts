@@ -5,13 +5,20 @@ export interface PaginatedJobs {
   data: JobApplication[];
   total: number;
   hasMore: boolean;
+  statusCounts: Record<string, number>;
 }
 
 export const jobsApi = {
-  getAll: (page = 1, limit = 20) =>
-    api.get<PaginatedJobs>(`/jobs?page=${page}&limit=${limit}`),
-  search: (query: string) =>
-    api.get<PaginatedJobs>(`/jobs?search=${encodeURIComponent(query)}`),
+  getAll: (page = 1, limit = 20, status?: string) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.set('status', status);
+    return api.get<PaginatedJobs>(`/jobs?${params}`);
+  },
+  search: (query: string, status?: string) => {
+    const params = new URLSearchParams({ search: query });
+    if (status) params.set('status', status);
+    return api.get<PaginatedJobs>(`/jobs?${params}`);
+  },
   getOne: (id: string) => api.get<JobApplication>(`/jobs/${id}`),
   create: (dto: CreateJobDto) => api.post<JobApplication>('/jobs', dto),
   update: (id: string, dto: UpdateJobDto) =>

@@ -10,15 +10,23 @@ export const useJobsStore = defineStore('jobs', () => {
   const searching = ref(false);
   const error = ref<string | null>(null);
   const hasMore = ref(false);
+  const total = ref(0);
+  const statusCounts = ref<Record<string, number>>({});
   const currentPage = ref(0);
+  const currentSearch = ref<string | undefined>(undefined);
+  const currentStatus = ref<string | undefined>(undefined);
 
-  async function fetchJobs() {
+  async function fetchJobs(status?: string) {
     loading.value = true;
     error.value = null;
+    currentSearch.value = undefined;
+    currentStatus.value = status;
     try {
-      const result = await jobsApi.getAll(1);
+      const result = await jobsApi.getAll(1, 20, status);
       jobs.value = result.data;
       hasMore.value = result.hasMore;
+      total.value = result.total;
+      statusCounts.value = result.statusCounts;
       currentPage.value = 1;
     } catch (e) {
       error.value = (e as Error).message;
@@ -27,13 +35,17 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
-  async function searchJobs(query: string) {
+  async function searchJobs(query: string, status?: string) {
     searching.value = true;
     error.value = null;
+    currentSearch.value = query;
+    currentStatus.value = status;
     try {
-      const result = await jobsApi.search(query);
+      const result = await jobsApi.search(query, status);
       jobs.value = result.data;
       hasMore.value = false;
+      total.value = result.total;
+      statusCounts.value = result.statusCounts;
       currentPage.value = 0;
     } catch (e) {
       error.value = (e as Error).message;
@@ -47,7 +59,7 @@ export const useJobsStore = defineStore('jobs', () => {
     loadingMore.value = true;
     try {
       const nextPage = currentPage.value + 1;
-      const result = await jobsApi.getAll(nextPage);
+      const result = await jobsApi.getAll(nextPage, 20, currentStatus.value);
       jobs.value.push(...result.data);
       hasMore.value = result.hasMore;
       currentPage.value = nextPage;
@@ -80,5 +92,5 @@ export const useJobsStore = defineStore('jobs', () => {
     return jobs.value.find((j) => j.id === id) ?? null;
   }
 
-  return { jobs, loading, loadingMore, searching, error, hasMore, fetchJobs, searchJobs, fetchNextPage, createJob, updateJob, deleteJob, getJob };
+  return { jobs, loading, loadingMore, searching, error, hasMore, total, statusCounts, fetchJobs, searchJobs, fetchNextPage, createJob, updateJob, deleteJob, getJob };
 });
