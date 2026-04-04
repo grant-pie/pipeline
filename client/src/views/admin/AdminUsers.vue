@@ -1,5 +1,9 @@
 <template>
   <div>
+    <Transition name="toast">
+      <div v-if="toastVisible" class="toast">ID copied to clipboard</div>
+    </Transition>
+
     <div class="page-header">
       <h1 class="page-title">Users</h1>
       <span class="total-label" v-if="total > 0">{{ total }} total</span>
@@ -139,8 +143,14 @@ function sortIcon(col: string) {
 function prev() { page.value--; load(); }
 function next() { page.value++; load(); }
 
+const toastVisible = ref(false);
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
 function copyId(id: string) {
   navigator.clipboard.writeText(id);
+  if (toastTimer) clearTimeout(toastTimer);
+  toastVisible.value = true;
+  toastTimer = setTimeout(() => { toastVisible.value = false; }, 2000);
 }
 
 function formatDate(iso: string) {
@@ -209,6 +219,22 @@ onMounted(load);
 
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--surface); }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--text);
+  color: var(--surface);
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  z-index: 999;
+  pointer-events: none;
+}
+
+.toast-enter-active, .toast-leave-active { transition: opacity 0.2s, transform 0.2s; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(6px); }
 
 .cell-id { width: 90px; }
 
