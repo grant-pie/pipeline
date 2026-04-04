@@ -42,10 +42,11 @@ function handleLogout() {
 <style scoped>
 .navbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  height: var(--navbar-height, 54px);
+  padding: 8px 24px;
+  height: auto;
   width: 100%;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -73,6 +74,10 @@ function handleLogout() {
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-basis: 100%;
+  justify-content: space-between;
+  order: 2;
+  padding-bottom: 4px;
 }
 
 .nav-actions {
@@ -86,45 +91,19 @@ function handleLogout() {
   color: var(--text-muted);
 }
 
-@media (max-width: 480px) {
-  .nav-right {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-    padding: 8px 0;
-  }
-
-  .navbar {
-    height: auto;
-    padding: 10px 24px;
-  }
-
-  :global(#app) {
-    padding-top: var(--navbar-height-mobile, 80px);
-  }
-}
-
 @media (max-width: 768px) {
   .navbar.is-admin {
-    flex-wrap: wrap;
-    height: auto;
     padding: 8px 16px;
     gap: 2px;
   }
 
   .navbar.is-admin .hamburger {
-    order: 2;
     margin-left: auto;
   }
 
   .navbar.is-admin .nav-right {
-       justify-content: end;
-    order: 3;
-    flex-basis: 100%;
-    flex-direction: row;
-    align-items: center;
     gap: 12px;
-    padding: 6px 0 6px;
+    padding: 6px 0;
     border-top: 1px solid var(--border);
   }
 }
