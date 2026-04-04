@@ -10,7 +10,7 @@
         v-model="searchInput"
         type="search"
         class="search-input"
-        placeholder="Search by , title or owner..."
+        placeholder="Search by, title or owner..."
       />
     </div>
 
