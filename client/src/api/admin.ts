@@ -53,6 +53,21 @@ export interface AuditLogEntry {
   createdAt: string;
 }
 
+export interface AdminCharts {
+  userGrowth: {
+    labels: string[];
+    data: number[];
+  };
+  jobActivity: {
+    labels: string[];
+    datasets: Record<'applied' | 'interviewing' | 'offered' | 'rejected', number[]>;
+  };
+  topCompanies: {
+    labels: string[];
+    data: number[];
+  };
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -62,6 +77,7 @@ export interface PaginatedResponse<T> {
 export const adminApi = {
   // Stats
   getStats: () => api.get<AdminStats>('/admin/stats'),
+  getCharts: () => api.get<AdminCharts>('/admin/charts'),
 
   // Audit log
   getAuditLog: (page = 1, limit = 50, search?: string, sortBy?: string, sortOrder?: string) => {

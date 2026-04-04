@@ -36,6 +36,11 @@ export class AdminController {
     return this.adminService.getStats();
   }
 
+  @Get('charts')
+  getCharts() {
+    return this.adminService.getCharts();
+  }
+
   // ─── Audit Log ────────────────────────────────────────────────────────────
 
   @Get('audit-log')

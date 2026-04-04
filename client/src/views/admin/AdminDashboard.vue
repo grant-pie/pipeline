@@ -66,6 +66,29 @@
         </div>
       </section>
 
+      <template v-if="charts">
+        <section class="section">
+          <h2 class="section-title">User Growth</h2>
+          <div class="chart-card">
+            <Line :data="userGrowthData" :options="lineOptions" />
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-title">Job Activity</h2>
+          <div class="chart-card">
+            <Bar :data="jobActivityData" :options="stackedBarOptions" />
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-title">Top Companies</h2>
+          <div class="chart-card chart-card--short">
+            <Bar :data="topCompaniesData" :options="horizontalBarOptions" />
+          </div>
+        </section>
+      </template>
+
       <div class="quick-links">
         <RouterLink :to="{ name: 'admin-users' }" class="btn-ghost btn-sm">Manage users →</RouterLink>
         <RouterLink :to="{ name: 'admin-jobs' }" class="btn-ghost btn-sm">Manage jobs →</RouterLink>
@@ -76,16 +99,127 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { adminApi, type AdminStats } from '@/api/admin';
+import { ref, computed, onMounted } from 'vue';
+import {
+  Chart as ChartJS,
+  CategoryScale, LinearScale,
+  PointElement, LineElement,
+  BarElement,
+  Title, Tooltip, Legend, Filler,
+} from 'chart.js';
+import { Line, Bar } from 'vue-chartjs';
+import { adminApi, type AdminStats, type AdminCharts } from '@/api/admin';
 
-const stats = ref<AdminStats | null>(null);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
+
+const stats  = ref<AdminStats | null>(null);
+const charts = ref<AdminCharts | null>(null);
 const loading = ref(true);
-const error = ref('');
+const error   = ref('');
 
+// ─── Colours ──────────────────────────────────────────────────────────────────
+const C = {
+  applied:       '#5b8af0',
+  appliedBg:     'rgba(91,138,240,0.15)',
+  interviewing:  '#e0a83d',
+  interviewingBg:'rgba(224,168,61,0.15)',
+  offered:       '#3dba73',
+  offeredBg:     'rgba(61,186,115,0.15)',
+  rejected:      '#888',
+  rejectedBg:    'rgba(136,136,136,0.15)',
+  grid:          '#272727',
+  text:          '#888',
+};
+
+// ─── Shared axis/tooltip defaults ─────────────────────────────────────────────
+const baseOptions = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: { labels: { color: C.text, boxWidth: 12, font: { size: 12 } } },
+    tooltip: { bodyColor: '#e4e4e4', titleColor: '#e4e4e4', backgroundColor: '#1e1e1e', borderColor: '#272727', borderWidth: 1 },
+  },
+  scales: {
+    x: { ticks: { color: C.text, font: { size: 11 } }, grid: { color: C.grid } },
+    y: { ticks: { color: C.text, font: { size: 11 } }, grid: { color: C.grid } },
+  },
+};
+
+// ─── Label formatter ──────────────────────────────────────────────────────────
+function formatMonths(labels: string[]) {
+  return labels.map(m => {
+    const [year, month] = m.split('-');
+    return new Date(Number(year), Number(month) - 1).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
+  });
+}
+
+// ─── Chart data ───────────────────────────────────────────────────────────────
+const userGrowthData = computed(() => ({
+  labels: formatMonths(charts.value!.userGrowth.labels),
+  datasets: [{
+    label: 'Total users',
+    data: charts.value!.userGrowth.data,
+    borderColor: C.applied,
+    backgroundColor: C.appliedBg,
+    fill: true,
+    tension: 0.4,
+    pointRadius: 3,
+  }],
+}));
+
+const jobActivityData = computed(() => ({
+  labels: formatMonths(charts.value!.jobActivity.labels),
+  datasets: [
+    { label: 'Applied',       data: charts.value!.jobActivity.datasets.applied,       backgroundColor: C.applied },
+    { label: 'Interviewing',  data: charts.value!.jobActivity.datasets.interviewing,  backgroundColor: C.interviewing },
+    { label: 'Offered',       data: charts.value!.jobActivity.datasets.offered,       backgroundColor: C.offered },
+    { label: 'Rejected',      data: charts.value!.jobActivity.datasets.rejected,      backgroundColor: C.rejected },
+  ],
+}));
+
+const topCompaniesData = computed(() => ({
+  labels: charts.value!.topCompanies.labels,
+  datasets: [{
+    label: 'Applications',
+    data: charts.value!.topCompanies.data,
+    backgroundColor: C.appliedBg,
+    borderColor: C.applied,
+    borderWidth: 1,
+    borderRadius: 4,
+  }],
+}));
+
+// ─── Chart options ────────────────────────────────────────────────────────────
+const lineOptions = {
+  ...baseOptions,
+  plugins: { ...baseOptions.plugins, legend: { display: false } },
+};
+
+const stackedBarOptions = {
+  ...baseOptions,
+  scales: {
+    x: { ...baseOptions.scales.x, stacked: true },
+    y: { ...baseOptions.scales.y, stacked: true },
+  },
+};
+
+const horizontalBarOptions = {
+  ...baseOptions,
+  indexAxis: 'y' as const,
+  plugins: { ...baseOptions.plugins, legend: { display: false } },
+  scales: {
+    x: { ...baseOptions.scales.x, beginAtZero: true },
+    y: { ...baseOptions.scales.y },
+  },
+};
+
+// ─── Load ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
   try {
-    stats.value = await adminApi.getStats();
+    [stats.value, charts.value] = await Promise.all([
+      adminApi.getStats(),
+      adminApi.getCharts(),
+    ]);
   } catch (e) {
     error.value = (e as Error).message || 'Failed to load stats.';
   } finally {
@@ -137,19 +271,28 @@ onMounted(async () => {
   color: var(--text-muted);
 }
 
-.text-danger {
-  color: var(--danger);
+.text-danger { color: var(--danger); }
+
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  height: 280px;
+}
+
+.chart-card--short {
+  height: 320px;
 }
 
 .quick-links {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  margin-top: 8px;
 }
 
-.quick-links a {
-  text-decoration: none;
-}
+.quick-links a { text-decoration: none; }
 
 .state-msg {
   color: var(--text-muted);

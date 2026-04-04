@@ -376,6 +376,72 @@ export class AdminService {
     return { message: `${ids.length} job(s) deleted` };
   }
 
+  // ─── Charts ───────────────────────────────────────────────────────────────
+
+  async getCharts() {
+    const start = new Date();
+    start.setMonth(start.getMonth() - 11);
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+
+    const months: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(start);
+      d.setMonth(d.getMonth() + i);
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    const [baselineResult, userMonthlyRaw, jobActivityRaw, topCompaniesRaw] = await Promise.all([
+      this.usersRepo.query<{ count: string }[]>(
+        `SELECT COUNT(*)::int as count FROM users WHERE "createdAt" < $1`,
+        [start],
+      ),
+      this.usersRepo.query<{ month: string; count: number }[]>(
+        `SELECT TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM') as month, COUNT(*)::int as count
+         FROM users WHERE "createdAt" >= $1
+         GROUP BY DATE_TRUNC('month', "createdAt")
+         ORDER BY DATE_TRUNC('month', "createdAt")`,
+        [start],
+      ),
+      this.jobsRepo.query<{ month: string; status: string; count: number }[]>(
+        `SELECT TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM') as month, status, COUNT(*)::int as count
+         FROM jobs WHERE "createdAt" >= $1
+         GROUP BY DATE_TRUNC('month', "createdAt"), status
+         ORDER BY DATE_TRUNC('month', "createdAt")`,
+        [start],
+      ),
+      this.jobsRepo.query<{ company: string; count: number }[]>(
+        `SELECT company, COUNT(*)::int as count FROM jobs GROUP BY company ORDER BY count DESC LIMIT 10`,
+      ),
+    ]);
+
+    const userMonthMap = new Map(userMonthlyRaw.map(r => [r.month, r.count]));
+    let cumulative = Number(baselineResult[0].count);
+    const userGrowthData = months.map(m => {
+      cumulative += (userMonthMap.get(m) ?? 0);
+      return cumulative;
+    });
+
+    const jobMonthStatusMap = new Map<string, Map<string, number>>();
+    for (const row of jobActivityRaw) {
+      if (!jobMonthStatusMap.has(row.month)) jobMonthStatusMap.set(row.month, new Map());
+      jobMonthStatusMap.get(row.month)!.set(row.status, row.count);
+    }
+    const statuses = ['applied', 'interviewing', 'offered', 'rejected'] as const;
+    const jobActivityDatasets = Object.fromEntries(
+      statuses.map(status => [status, months.map(m => jobMonthStatusMap.get(m)?.get(status) ?? 0)]),
+    );
+
+    return {
+      userGrowth: { labels: months, data: userGrowthData },
+      jobActivity: { labels: months, datasets: jobActivityDatasets },
+      topCompanies: {
+        labels: topCompaniesRaw.map(r => r.company),
+        data: topCompaniesRaw.map(r => r.count),
+      },
+    };
+  }
+
   // ─── Audit Log ────────────────────────────────────────────────────────────
 
   getAuditLog(page: number, limit: number, search?: string, sortBy?: string, sortOrder?: 'ASC' | 'DESC') {
