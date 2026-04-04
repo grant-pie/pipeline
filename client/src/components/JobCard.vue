@@ -48,6 +48,7 @@ defineEmits<{ delete: [id: string] }>();
   flex-direction: column;
   gap: 14px;
   transition: border-color 0.15s;
+  min-width: 0;
 }
 
 .job-card:hover {
@@ -138,6 +139,7 @@ defineEmits<{ delete: [id: string] }>();
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .card-actions {
