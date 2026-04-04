@@ -79,7 +79,15 @@ watch(form, () => {
   showResend.value = false;
 });
 
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 async function handleSubmit() {
+  if (!isValidEmail(form.email)) {
+    error.value = 'Please enter a valid email address.';
+    return;
+  }
   loading.value = true;
   error.value = '';
   showResend.value = false;

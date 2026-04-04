@@ -103,7 +103,15 @@ function checkPasswordMatch() {
   }, 300);
 }
 
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 async function handleSubmit() {
+  if (!isValidEmail(form.email)) {
+    error.value = 'Please enter a valid email address.';
+    return;
+  }
   if (form.password !== form.confirm) {
     passwordMatchError.value = 'Passwords do not match.';
     return;

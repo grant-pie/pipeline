@@ -2,15 +2,17 @@
   <nav class="navbar">
     <RouterLink to="/dashboard" class="brand">Pipeline</RouterLink>
     <div class="nav-right">
-      <RouterLink
-        v-if="authStore.isAdmin"
-        :to="isOnAdminPages ? { name: 'dashboard' } : { name: 'admin-dashboard' }"
-        class="admin-link"
-      >
-        {{ isOnAdminPages ? 'Dashboard' : 'Admin' }}
-      </RouterLink>
       <span class="nav-email">{{ authStore.user?.email }}</span>
-      <button class="btn-ghost btn-sm" @click="handleLogout">Sign out</button>
+      <div class="nav-actions">
+        <RouterLink
+          v-if="authStore.isAdmin"
+          :to="isOnAdminPages ? { name: 'dashboard' } : { name: 'admin-dashboard' }"
+          class="admin-link"
+        >
+          {{ isOnAdminPages ? 'Dashboard' : 'Admin' }}
+        </RouterLink>
+        <button class="btn-ghost btn-sm" @click="handleLogout">Sign out</button>
+      </div>
     </div>
   </nav>
 </template>
@@ -38,13 +40,16 @@ function handleLogout() {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  height: 54px;
+  height: var(--navbar-height, 54px);
+  width: 100%;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
-  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .brand {
@@ -65,9 +70,33 @@ function handleLogout() {
   gap: 14px;
 }
 
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .nav-email {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+@media (max-width: 480px) {
+  .nav-right {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 8px 0;
+  }
+
+  .navbar {
+    height: auto;
+    padding: 10px 24px;
+  }
+
+  :global(#app) {
+    padding-top: var(--navbar-height-mobile, 80px);
+  }
 }
 
 .admin-link {

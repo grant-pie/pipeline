@@ -31,6 +31,8 @@
   --radius: 6px;
   --radius-lg: 10px;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --navbar-height: 54px;
+  --navbar-height-mobile: 80px;
 }
 
 html, body {
@@ -47,6 +49,7 @@ html, body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: var(--navbar-height);
 }
 
 a {
