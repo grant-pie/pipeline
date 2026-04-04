@@ -24,7 +24,7 @@ export class JobsService {
 
     if (search) {
       baseQb.andWhere(
-        '(job.company ILIKE :search OR job.title ILIKE :search OR CAST(job."dateApplied" AS TEXT) ILIKE :search)',
+        '(job.company ILIKE :search OR job.title ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -48,18 +48,13 @@ export class JobsService {
 
     if (search) {
       dataQb.andWhere(
-        '(job.company ILIKE :search OR job.title ILIKE :search OR CAST(job."dateApplied" AS TEXT) ILIKE :search)',
+        '(job.company ILIKE :search OR job.title ILIKE :search)',
         { search: `%${search}%` },
       );
     }
 
     if (status) {
       dataQb.andWhere('job.status = :status', { status });
-    }
-
-    if (search) {
-      const data = await dataQb.getMany();
-      return { data, total: data.length, hasMore: false, statusCounts };
     }
 
     dataQb.skip((page - 1) * limit).take(limit);

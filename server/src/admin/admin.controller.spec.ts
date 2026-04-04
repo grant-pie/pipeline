@@ -85,14 +85,14 @@ describe('AdminController', () => {
   // GET /admin/audit-log
   // ---------------------------------------------------------------------------
   describe('getAuditLog()', () => {
-    it('passes parsed page and limit to adminService', async () => {
-      await controller.getAuditLog({ page: '2', limit: '25' });
-      expect(adminService.getAuditLog).toHaveBeenCalledWith(2, 25);
+    it('passes parsed page, limit, search, sortBy, and sortOrder to adminService', async () => {
+      await controller.getAuditLog({ page: '2', limit: '25', search: 'admin@', sortBy: 'action', sortOrder: 'ASC' });
+      expect(adminService.getAuditLog).toHaveBeenCalledWith(2, 25, 'admin@', 'action', 'ASC');
     });
 
-    it('defaults to page=1 and limit=50 when params are absent', async () => {
+    it('defaults to page=1, limit=50, and undefined optional params when absent', async () => {
       await controller.getAuditLog({});
-      expect(adminService.getAuditLog).toHaveBeenCalledWith(1, 50);
+      expect(adminService.getAuditLog).toHaveBeenCalledWith(1, 50, undefined, undefined, undefined);
     });
 
     it('clamps page to minimum 1 when page=0', async () => {
@@ -106,20 +106,26 @@ describe('AdminController', () => {
       const [, limit] = adminService.getAuditLog.mock.calls[0];
       expect(limit).toBe(100);
     });
+
+    it('passes undefined for search when query param is whitespace', async () => {
+      await controller.getAuditLog({ search: '   ' });
+      const [, , search] = adminService.getAuditLog.mock.calls[0];
+      expect(search).toBeUndefined();
+    });
   });
 
   // ---------------------------------------------------------------------------
   // GET /admin/users
   // ---------------------------------------------------------------------------
   describe('listUsers()', () => {
-    it('passes parsed page, limit, and search to adminService', async () => {
-      await controller.listUsers({ page: '2', limit: '10', search: '  alice  ' });
-      expect(adminService.listUsers).toHaveBeenCalledWith(2, 10, 'alice');
+    it('passes parsed page, limit, search, sortBy, and sortOrder to adminService', async () => {
+      await controller.listUsers({ page: '2', limit: '10', search: '  alice  ', sortBy: 'email', sortOrder: 'ASC' });
+      expect(adminService.listUsers).toHaveBeenCalledWith(2, 10, 'alice', 'email', 'ASC');
     });
 
-    it('defaults to page=1 and limit=20 when params are absent', async () => {
+    it('defaults to page=1, limit=20, and undefined optional params when absent', async () => {
       await controller.listUsers({});
-      expect(adminService.listUsers).toHaveBeenCalledWith(1, 20, undefined);
+      expect(adminService.listUsers).toHaveBeenCalledWith(1, 20, undefined, undefined, undefined);
     });
 
     it('passes undefined for search when the query param is an empty string', async () => {
@@ -254,15 +260,15 @@ describe('AdminController', () => {
   // GET /admin/jobs
   // ---------------------------------------------------------------------------
   describe('listJobs()', () => {
-    it('passes parsed page, limit, search, and userId to adminService', async () => {
-      await controller.listJobs({ page: '3', limit: '15', search: 'acme', userId: 'u1' });
+    it('passes parsed page, limit, search, userId, sortBy, and sortOrder to adminService', async () => {
+      await controller.listJobs({ page: '3', limit: '15', search: 'acme', userId: 'u1', sortBy: 'company', sortOrder: 'ASC' });
 
-      expect(adminService.listJobs).toHaveBeenCalledWith(3, 15, 'acme', 'u1');
+      expect(adminService.listJobs).toHaveBeenCalledWith(3, 15, 'acme', 'u1', 'company', 'ASC');
     });
 
-    it('defaults to page=1 and limit=20 when params are absent', async () => {
+    it('defaults to page=1, limit=20, and undefined optional params when absent', async () => {
       await controller.listJobs({});
-      expect(adminService.listJobs).toHaveBeenCalledWith(1, 20, undefined, undefined);
+      expect(adminService.listJobs).toHaveBeenCalledWith(1, 20, undefined, undefined, undefined, undefined);
     });
 
     it('passes undefined for userId when not in query', async () => {

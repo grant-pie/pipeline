@@ -26,9 +26,8 @@ function makeJob(overrides: Partial<Job> = {}): Job {
 
 describe('JobsService', () => {
   let service: JobsService;
-  let qb: { where: jest.Mock; andWhere: jest.Mock; orderBy: jest.Mock; getMany: jest.Mock };
+  let qb: Record<string, jest.Mock>;
   let repo: {
-    findAndCount: jest.Mock;
     findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
@@ -36,15 +35,20 @@ describe('JobsService', () => {
     createQueryBuilder: jest.Mock;
   };
 
+  function makeQb() {
+    const builder: Record<string, jest.Mock> = {};
+    const chain = () => builder;
+    ['where', 'andWhere', 'orderBy', 'skip', 'take', 'select', 'addSelect', 'groupBy'].forEach(
+      (m) => { builder[m] = jest.fn().mockReturnValue(chain()); },
+    );
+    builder.getRawMany = jest.fn().mockResolvedValue([]);
+    builder.getManyAndCount = jest.fn().mockResolvedValue([[], 0]);
+    return builder;
+  }
+
   beforeEach(async () => {
-    qb = {
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      getMany: jest.fn().mockResolvedValue([]),
-    };
+    qb = makeQb();
     repo = {
-      findAndCount: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
@@ -70,22 +74,22 @@ describe('JobsService', () => {
   describe('findAll()', () => {
     it('returns paginated jobs belonging to the requesting user', async () => {
       const jobs = [makeJob(), makeJob({ id: 'job-uuid-2' })];
-      repo.findAndCount.mockResolvedValue([jobs, 2]);
+      qb.getManyAndCount.mockResolvedValue([jobs, 2]);
 
       const result = await service.findAll(USER_A, 1, 20);
 
-      expect(repo.findAndCount).toHaveBeenCalledWith({
-        where: { userId: USER_A },
-        order: { createdAt: 'DESC' },
-        skip: 0,
-        take: 20,
-      });
       expect(result.data).toBe(jobs);
       expect(result.total).toBe(2);
     });
 
+    it('scopes both query builders to the requesting user', async () => {
+      await service.findAll(USER_A, 1, 20);
+
+      expect(qb.where).toHaveBeenCalledWith('job.userId = :userId', { userId: USER_A });
+    });
+
     it('returns an empty data array when the user has no jobs', async () => {
-      repo.findAndCount.mockResolvedValue([[], 0]);
+      qb.getManyAndCount.mockResolvedValue([[], 0]);
 
       const result = await service.findAll(USER_A, 1, 20);
 
@@ -94,17 +98,13 @@ describe('JobsService', () => {
     });
 
     it('orders results by createdAt DESC', async () => {
-      repo.findAndCount.mockResolvedValue([[], 0]);
-
       await service.findAll(USER_A, 1, 20);
 
-      expect(repo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({ order: { createdAt: 'DESC' } }),
-      );
+      expect(qb.orderBy).toHaveBeenCalledWith('job.createdAt', 'DESC');
     });
 
     it('sets hasMore true when more pages exist', async () => {
-      repo.findAndCount.mockResolvedValue([[makeJob()], 25]);
+      qb.getManyAndCount.mockResolvedValue([[makeJob()], 25]);
 
       const result = await service.findAll(USER_A, 1, 20);
 
@@ -112,7 +112,7 @@ describe('JobsService', () => {
     });
 
     it('sets hasMore false on the last page', async () => {
-      repo.findAndCount.mockResolvedValue([[makeJob()], 20]);
+      qb.getManyAndCount.mockResolvedValue([[makeJob()], 20]);
 
       const result = await service.findAll(USER_A, 1, 20);
 
@@ -120,13 +120,35 @@ describe('JobsService', () => {
     });
 
     it('skips the correct number of records for page 2', async () => {
-      repo.findAndCount.mockResolvedValue([[], 0]);
-
       await service.findAll(USER_A, 2, 20);
 
-      expect(repo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({ skip: 20, take: 20 }),
-      );
+      expect(qb.skip).toHaveBeenCalledWith(20);
+      expect(qb.take).toHaveBeenCalledWith(20);
+    });
+
+    it('returns statusCounts parsed from getRawMany', async () => {
+      qb.getRawMany.mockResolvedValue([
+        { status: 'applied', count: '3' },
+        { status: 'offered', count: '1' },
+      ]);
+
+      const result = await service.findAll(USER_A, 1, 20);
+
+      expect(result.statusCounts).toEqual({ applied: 3, offered: 1 });
+    });
+
+    it('returns empty statusCounts when user has no jobs', async () => {
+      qb.getRawMany.mockResolvedValue([]);
+
+      const result = await service.findAll(USER_A, 1, 20);
+
+      expect(result.statusCounts).toEqual({});
+    });
+
+    it('filters by status when status param is provided', async () => {
+      await service.findAll(USER_A, 1, 20, undefined, 'applied');
+
+      expect(qb.andWhere).toHaveBeenCalledWith('job.status = :status', { status: 'applied' });
     });
   });
 
@@ -134,39 +156,41 @@ describe('JobsService', () => {
   // findAll() — search
   // ---------------------------------------------------------------------------
   describe('findAll() with search', () => {
-    it('uses the query builder instead of findAndCount when search is provided', async () => {
-      qb.getMany.mockResolvedValue([makeJob()]);
-
+    it('uses the query builder when search is provided', async () => {
       await service.findAll(USER_A, 1, 20, 'acme');
 
       expect(repo.createQueryBuilder).toHaveBeenCalledWith('job');
-      expect(repo.findAndCount).not.toHaveBeenCalled();
     });
 
-    it('scopes results to the requesting user', async () => {
-      qb.getMany.mockResolvedValue([]);
-
+    it('applies ILIKE search on company and title', async () => {
       await service.findAll(USER_A, 1, 20, 'acme');
 
-      expect(qb.where).toHaveBeenCalledWith('job.userId = :userId', { userId: USER_A });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(job.company ILIKE :search OR job.title ILIKE :search)',
+        { search: '%acme%' },
+      );
     });
 
-    it('returns hasMore: false regardless of result count', async () => {
-      qb.getMany.mockResolvedValue([makeJob(), makeJob({ id: 'job-2' })]);
+    it('still paginates results when search is provided', async () => {
+      const jobs = Array.from({ length: 5 }, (_, i) => makeJob({ id: `job-${i}` }));
+      qb.getManyAndCount.mockResolvedValue([jobs, 30]);
 
-      const result = await service.findAll(USER_A, 1, 20, 'acme');
+      const result = await service.findAll(USER_A, 2, 5, 'engineer');
 
-      expect(result.hasMore).toBe(false);
-    });
-
-    it('returns all matching results without pagination', async () => {
-      const jobs = Array.from({ length: 30 }, (_, i) => makeJob({ id: `job-${i}` }));
-      qb.getMany.mockResolvedValue(jobs);
-
-      const result = await service.findAll(USER_A, 1, 20, 'engineer');
-
-      expect(result.data).toHaveLength(30);
+      expect(qb.skip).toHaveBeenCalledWith(5);
+      expect(qb.take).toHaveBeenCalledWith(5);
+      expect(result.hasMore).toBe(true);
       expect(result.total).toBe(30);
+    });
+
+    it('applies status filter together with search', async () => {
+      await service.findAll(USER_A, 1, 20, 'acme', 'interviewing');
+
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(job.company ILIKE :search OR job.title ILIKE :search)',
+        { search: '%acme%' },
+      );
+      expect(qb.andWhere).toHaveBeenCalledWith('job.status = :status', { status: 'interviewing' });
     });
   });
 

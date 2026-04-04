@@ -9,6 +9,7 @@ import { In, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { User, UserRole } from '../users/entities/user.entity';
 import { Job } from '../jobs/entities/job.entity';
+import { UpdateJobDto } from '../jobs/dto/update-job.dto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
@@ -325,11 +326,18 @@ export class AdminService {
     };
   }
 
-  async updateJob(actor: AdminActor, id: string, dto: Partial<Record<string, unknown>>) {
+  async updateJob(actor: AdminActor, id: string, dto: UpdateJobDto) {
     const job = await this.jobsRepo.findOne({ where: { id } });
     if (!job) throw new NotFoundException('Job not found');
 
-    Object.assign(job, dto);
+    const { company, title, status, dateApplied, notes, link } = dto;
+    if (company !== undefined) job.company = company;
+    if (title !== undefined) job.title = title;
+    if (status !== undefined) job.status = status;
+    if (dateApplied !== undefined) job.dateApplied = dateApplied;
+    if (notes !== undefined) job.notes = notes;
+    if (link !== undefined) job.link = link;
+
     const saved = await this.jobsRepo.save(job);
 
     this.auditLogService.log({

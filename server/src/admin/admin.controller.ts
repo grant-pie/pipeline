@@ -132,7 +132,7 @@ export class AdminController {
     return this.adminService.updateJob(
       { id: req.user.id, email: req.user.email },
       id,
-      dto as Partial<Record<string, unknown>>,
+      dto,
     );
   }
 

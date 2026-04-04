@@ -236,13 +236,13 @@ describe('AdminService', () => {
       expect(result.hasMore).toBe(false);
     });
 
-    it('applies ILIKE search filter when search is provided', async () => {
+    it('applies ILIKE search filter on email and id when search is provided', async () => {
       qb.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.listUsers(1, 20, 'alice');
 
       expect(qb.where).toHaveBeenCalledWith(
-        'user.email ILIKE :search',
+        '(user.email ILIKE :search OR CAST(user.id AS text) ILIKE :search)',
         { search: '%alice%' },
       );
     });
@@ -937,10 +937,10 @@ describe('AdminService', () => {
   // getAuditLog()
   // ---------------------------------------------------------------------------
   describe('getAuditLog()', () => {
-    it('delegates to auditLogService.findAll with correct page and limit', () => {
-      service.getAuditLog(3, 50);
+    it('delegates to auditLogService.findAll passing all params through', () => {
+      service.getAuditLog(3, 50, 'admin@', 'action', 'ASC');
 
-      expect(auditLogService.findAll).toHaveBeenCalledWith(3, 50);
+      expect(auditLogService.findAll).toHaveBeenCalledWith(3, 50, 'admin@', 'action', 'ASC');
     });
 
     it('returns whatever auditLogService.findAll returns', async () => {

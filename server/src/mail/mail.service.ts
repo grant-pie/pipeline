@@ -1,9 +1,10 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
   private resend: Resend;
 
   constructor(private readonly config: ConfigService) {
@@ -38,6 +39,7 @@ export class MailService {
     });
 
     if (error) {
+      this.logger.error(`Failed to send verification email to ${email}: ${error.message}`);
       throw new InternalServerErrorException('Failed to send verification email.');
     }
   }
@@ -72,6 +74,7 @@ export class MailService {
     });
 
     if (error) {
+      this.logger.error(`Failed to send password reset email to ${email}: ${error.message}`);
       throw new InternalServerErrorException('Failed to send reset email.');
     }
   }
