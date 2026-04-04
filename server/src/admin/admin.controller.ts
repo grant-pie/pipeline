@@ -54,6 +54,8 @@ export class AdminController {
       Math.max(1, parseInt(String(query.page ?? 1), 10)),
       Math.min(100, Math.max(1, parseInt(String(query.limit ?? 20), 10))),
       query.search?.trim() || undefined,
+      query.sortBy || undefined,
+      query.sortOrder || undefined,
     );
   }
 
@@ -107,6 +109,8 @@ export class AdminController {
       Math.min(100, Math.max(1, parseInt(String(query.limit ?? 20), 10))),
       query.search?.trim() || undefined,
       query.userId || undefined,
+      query.sortBy || undefined,
+      query.sortOrder || undefined,
     );
   }
 

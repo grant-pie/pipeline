@@ -68,9 +68,11 @@ export const adminApi = {
     api.get<PaginatedResponse<AuditLogEntry>>(`/admin/audit-log?page=${page}&limit=${limit}`),
 
   // Users
-  listUsers: (page = 1, limit = 20, search?: string) => {
+  listUsers: (page = 1, limit = 20, search?: string, sortBy?: string, sortOrder?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set('search', search);
+    if (sortBy) params.set('sortBy', sortBy);
+    if (sortOrder) params.set('sortOrder', sortOrder);
     return api.get<PaginatedResponse<AdminUser>>(`/admin/users?${params}`);
   },
 
@@ -98,10 +100,12 @@ export const adminApi = {
     api.post<{ message: string }>(`/admin/users/${id}/reset-password`, {}),
 
   // Jobs
-  listJobs: (page = 1, limit = 20, search?: string, userId?: string) => {
+  listJobs: (page = 1, limit = 20, search?: string, userId?: string, sortBy?: string, sortOrder?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set('search', search);
     if (userId) params.set('userId', userId);
+    if (sortBy) params.set('sortBy', sortBy);
+    if (sortOrder) params.set('sortOrder', sortOrder);
     return api.get<PaginatedResponse<AdminJob>>(`/admin/jobs?${params}`);
   },
 

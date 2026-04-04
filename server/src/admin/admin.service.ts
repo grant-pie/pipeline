@@ -76,11 +76,19 @@ export class AdminService {
 
   // ─── Users ────────────────────────────────────────────────────────────────
 
-  async listUsers(page: number, limit: number, search?: string) {
+  async listUsers(
+    page: number,
+    limit: number,
+    search?: string,
+    sortBy = 'createdAt',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+  ) {
+    const SORTABLE = new Set(['email', 'role', 'isSuspended', 'isVerified', 'createdAt']);
+    const sortCol = SORTABLE.has(sortBy) ? `user.${sortBy}` : 'user.createdAt';
+
     const qb = this.usersRepo
       .createQueryBuilder('user')
       .loadRelationCountAndMap('user.jobCount', 'user.jobs')
-      .orderBy('user.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -88,6 +96,19 @@ export class AdminService {
       qb.where('user.email ILIKE :search', { search: `%${search}%` });
     }
 
+    // jobCount is a mapped relation count — sort in memory when requested
+    if (sortBy === 'jobCount') {
+      qb.orderBy('user.createdAt', 'DESC');
+      const [data, total] = await qb.getManyAndCount();
+      const sorted = data.sort((a, b) => {
+        const aCount = (a as any).jobCount ?? 0;
+        const bCount = (b as any).jobCount ?? 0;
+        return sortOrder === 'ASC' ? aCount - bCount : bCount - aCount;
+      });
+      return { data: sorted.map(sanitizeUser), total, hasMore: page * limit < total };
+    }
+
+    qb.orderBy(sortCol, sortOrder);
     const [data, total] = await qb.getManyAndCount();
     return { data: data.map(sanitizeUser), total, hasMore: page * limit < total };
   }
@@ -258,11 +279,21 @@ export class AdminService {
 
   // ─── Jobs ─────────────────────────────────────────────────────────────────
 
-  async listJobs(page: number, limit: number, search?: string, userId?: string) {
+  async listJobs(
+    page: number,
+    limit: number,
+    search?: string,
+    userId?: string,
+    sortBy = 'createdAt',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+  ) {
+    const SORTABLE = new Set(['company', 'title', 'status', 'dateApplied', 'createdAt']);
+    const sortCol = SORTABLE.has(sortBy) ? `job.${sortBy}` : 'job.createdAt';
+
     const qb = this.jobsRepo
       .createQueryBuilder('job')
       .leftJoinAndSelect('job.user', 'user')
-      .orderBy('job.createdAt', 'DESC')
+      .orderBy(sortCol, sortOrder)
       .skip((page - 1) * limit)
       .take(limit);
 

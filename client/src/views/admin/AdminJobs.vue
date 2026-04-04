@@ -25,11 +25,19 @@
         <thead>
           <tr>
             <th></th>
-            <th>Company</th>
-            <th>Title</th>
-            <th>Status</th>
+            <th @click="setSort('company')" class="sortable">
+              Company <span class="sort-icon">{{ sortIcon('company') }}</span>
+            </th>
+            <th @click="setSort('title')" class="sortable">
+              Title <span class="sort-icon">{{ sortIcon('title') }}</span>
+            </th>
+            <th @click="setSort('status')" class="sortable">
+              Status <span class="sort-icon">{{ sortIcon('status') }}</span>
+            </th>
             <th>Owner</th>
-            <th>Applied</th>
+            <th @click="setSort('dateApplied')" class="sortable">
+              Applied <span class="sort-icon">{{ sortIcon('dateApplied') }}</span>
+            </th>
             <th></th>
           </tr>
         </thead>
@@ -91,6 +99,8 @@ const searchInput = ref('');
 const selected = ref<string[]>([]);
 const deleting = ref<string | null>(null);
 const bulkDeleting = ref(false);
+const sortBy = ref('createdAt');
+const sortOrder = ref<'ASC' | 'DESC'>('DESC');
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -99,7 +109,13 @@ async function load() {
   error.value = '';
   selected.value = [];
   try {
-    const res = await adminApi.listJobs(page.value, 20, searchInput.value.trim() || undefined);
+    const res = await adminApi.listJobs(
+      page.value, 20,
+      searchInput.value.trim() || undefined,
+      undefined,
+      sortBy.value,
+      sortOrder.value,
+    );
     jobs.value = res.data;
     total.value = res.total;
     hasMore.value = res.hasMore;
@@ -114,6 +130,22 @@ watch(searchInput, () => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => { page.value = 1; load(); }, 300);
 });
+
+function setSort(col: string) {
+  if (sortBy.value === col) {
+    sortOrder.value = sortOrder.value === 'ASC' ? 'DESC' : 'ASC';
+  } else {
+    sortBy.value = col;
+    sortOrder.value = 'ASC';
+  }
+  page.value = 1;
+  load();
+}
+
+function sortIcon(col: string) {
+  if (sortBy.value !== col) return '↕';
+  return sortOrder.value === 'ASC' ? '↑' : '↓';
+}
 
 function prev() { page.value--; load(); }
 function next() { page.value++; load(); }
@@ -175,6 +207,21 @@ onMounted(load);
 .search-input:focus { border-color: var(--accent); }
 
 .total-label { font-size: 13px; color: var(--text-muted); }
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable:hover { color: var(--text); }
+
+.sort-icon {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.6;
+}
 
 .action-error {
   color: var(--danger);

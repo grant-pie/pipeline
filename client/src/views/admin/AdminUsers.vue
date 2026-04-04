@@ -22,11 +22,21 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Jobs</th>
-            <th>Joined</th>
+            <th @click="setSort('email')" class="sortable">
+              Email <span class="sort-icon">{{ sortIcon('email') }}</span>
+            </th>
+            <th @click="setSort('role')" class="sortable">
+              Role <span class="sort-icon">{{ sortIcon('role') }}</span>
+            </th>
+            <th @click="setSort('isSuspended')" class="sortable">
+              Status <span class="sort-icon">{{ sortIcon('isSuspended') }}</span>
+            </th>
+            <th @click="setSort('jobCount')" class="sortable">
+              Jobs <span class="sort-icon">{{ sortIcon('jobCount') }}</span>
+            </th>
+            <th @click="setSort('createdAt')" class="sortable">
+              Joined <span class="sort-icon">{{ sortIcon('createdAt') }}</span>
+            </th>
             <th></th>
           </tr>
         </thead>
@@ -74,6 +84,8 @@ const page = ref(1);
 const hasMore = ref(false);
 const total = ref(0);
 const searchInput = ref('');
+const sortBy = ref('createdAt');
+const sortOrder = ref<'ASC' | 'DESC'>('DESC');
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -81,7 +93,12 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const res = await adminApi.listUsers(page.value, 20, searchInput.value.trim() || undefined);
+    const res = await adminApi.listUsers(
+      page.value, 20,
+      searchInput.value.trim() || undefined,
+      sortBy.value,
+      sortOrder.value,
+    );
     users.value = res.data;
     total.value = res.total;
     hasMore.value = res.hasMore;
@@ -94,11 +111,24 @@ async function load() {
 
 watch(searchInput, () => {
   if (searchTimer) clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    page.value = 1;
-    load();
-  }, 300);
+  searchTimer = setTimeout(() => { page.value = 1; load(); }, 300);
 });
+
+function setSort(col: string) {
+  if (sortBy.value === col) {
+    sortOrder.value = sortOrder.value === 'ASC' ? 'DESC' : 'ASC';
+  } else {
+    sortBy.value = col;
+    sortOrder.value = 'ASC';
+  }
+  page.value = 1;
+  load();
+}
+
+function sortIcon(col: string) {
+  if (sortBy.value !== col) return '↕';
+  return sortOrder.value === 'ASC' ? '↑' : '↓';
+}
 
 function prev() { page.value--; load(); }
 function next() { page.value++; load(); }
@@ -111,9 +141,7 @@ onMounted(load);
 </script>
 
 <style scoped>
-.toolbar {
-  margin-bottom: 24px;
-}
+.toolbar { margin-bottom: 24px; }
 
 .search-input {
   max-width: 300px;
@@ -129,10 +157,7 @@ onMounted(load);
 
 .search-input:focus { border-color: var(--accent); }
 
-.total-label {
-  font-size: 13px;
-  color: var(--text-muted);
-}
+.total-label { font-size: 13px; color: var(--text-muted); }
 
 .data-table {
   width: 100%;
@@ -151,6 +176,21 @@ onMounted(load);
   letter-spacing: 0.4px;
 }
 
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable:hover { color: var(--text); }
+
+.sort-icon {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
 .data-table td {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
@@ -162,7 +202,6 @@ onMounted(load);
 
 .cell-email { font-weight: 400; }
 .cell-muted { color: var(--text-muted); }
-
 .cell-actions { text-align: right; }
 .cell-actions a { text-decoration: none; }
 
@@ -174,8 +213,8 @@ onMounted(load);
   display: inline-block;
 }
 
-.badge-admin { color: var(--accent); background: rgba(91,138,240,0.12); }
-.badge-user  { color: var(--text-muted); background: var(--surface-2); }
+.badge-admin   { color: var(--accent); background: rgba(91,138,240,0.12); }
+.badge-user    { color: var(--text-muted); background: var(--surface-2); }
 .badge-success { color: var(--success); background: rgba(61,186,115,0.1); }
 .badge-danger  { color: var(--danger); background: var(--danger-bg); }
 .badge-muted   { color: var(--text-muted); background: var(--surface-2); }

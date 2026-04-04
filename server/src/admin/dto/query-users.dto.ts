@@ -1,4 +1,4 @@
-import { IsOptional, IsNumberString, IsString } from 'class-validator';
+import { IsOptional, IsNumberString, IsString, IsIn } from 'class-validator';
 
 export class QueryUsersDto {
   @IsOptional()
@@ -12,4 +12,12 @@ export class QueryUsersDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsIn(['email', 'role', 'isSuspended', 'isVerified', 'jobCount', 'createdAt'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['ASC', 'DESC'])
+  sortOrder?: 'ASC' | 'DESC';
 }
