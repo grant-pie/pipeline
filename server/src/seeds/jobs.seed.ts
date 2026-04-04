@@ -2,15 +2,18 @@
  * Job Seed Script
  *
  * Populates the database with randomly generated job applications.
- * Jobs are distributed randomly across all existing users in the database.
+ * Jobs are distributed randomly across all existing users in the database,
+ * or scoped to a single user when --email= is provided.
  *
  * Prerequisites:
  *   - The database must be running and configured in .env
  *   - At least one user account must exist (register via the app first)
  *
  * Usage:
- *   npm run seed:jobs               # seeds 1 job
- *   npm run seed:jobs -- --count=50 # seeds 50 jobs
+ *   npm run seed:jobs                                    # seeds 1 job across all users
+ *   npm run seed:jobs -- --count=50                      # seeds 50 jobs across all users
+ *   npm run seed:jobs -- --email=user@example.com        # seeds 1 job for a specific user
+ *   npm run seed:jobs -- --count=20 --email=u@example.com # seeds 20 jobs for a specific user
  */
 
 import { NestFactory } from '@nestjs/core';

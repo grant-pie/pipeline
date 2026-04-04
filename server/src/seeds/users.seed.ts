@@ -21,16 +21,19 @@ import * as bcrypt from 'bcryptjs';
 
 import { User, UserRole } from '../users/entities/user.entity';
 
-const DEFAULT_PASSWORD = 'Password1!';
-
 async function seed() {
+  const password = process.env.SEED_USER_PASSWORD;
+  if (!password) {
+    throw new Error('SEED_USER_PASSWORD must be set in .env before running this script.');
+  }
+
   const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error'] });
   const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
 
   const countArg = process.argv.find((a) => a.startsWith('--count='));
   const count = countArg ? parseInt(countArg.split('=')[1], 10) : 10;
 
-  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   let created = 0;
   let skipped = 0;
@@ -57,7 +60,7 @@ async function seed() {
   }
 
   console.log(`✅ Seeded ${created} user(s) (${skipped} skipped — email already existed)`);
-  console.log(`   Default password for all seeded users: ${DEFAULT_PASSWORD}`);
+  console.log(`   Default password for all seeded users: ${password}`);
 
   await app.close();
 }
