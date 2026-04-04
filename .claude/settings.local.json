@@ -9,7 +9,10 @@
       "Bash(npm run:*)",
       "Bash(find /c/Users/grant/Workspaces/pipeline/server/src -name *.ts)",
       "Bash(npm install:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/typeorm/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/pg/package.json'\\).version\\)\")",
+      "Bash(node --trace-deprecation -e ':*)"
     ]
   }
 }

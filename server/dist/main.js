@@ -1,5 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+process.on('warning', (warning) => {
+    if (warning.name === 'DeprecationWarning' &&
+        warning.message.includes('client.query() when the client is already executing')) {
+        return;
+    }
+    console.warn(warning);
+});
 const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
 const nest_winston_1 = require("nest-winston");

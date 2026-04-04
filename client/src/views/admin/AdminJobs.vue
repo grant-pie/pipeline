@@ -24,7 +24,14 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th></th>
+            <th class="cell-check">
+              <input
+                type="checkbox"
+                :checked="allSelected"
+                :indeterminate="someSelected"
+                @change="toggleAll"
+              />
+            </th>
             <th @click="setSort('company')" class="sortable">
               Company <span class="sort-icon">{{ sortIcon('company') }}</span>
             </th>
@@ -85,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { adminApi, type AdminJob } from '@/api/admin';
 
 const jobs = ref<AdminJob[]>([]);
@@ -101,6 +108,17 @@ const deleting = ref<string | null>(null);
 const bulkDeleting = ref(false);
 const sortBy = ref('createdAt');
 const sortOrder = ref<'ASC' | 'DESC'>('DESC');
+
+const allSelected = computed(() => jobs.value.length > 0 && jobs.value.every(j => selected.value.includes(j.id)));
+const someSelected = computed(() => selected.value.length > 0 && !allSelected.value);
+
+function toggleAll() {
+  if (allSelected.value) {
+    selected.value = [];
+  } else {
+    selected.value = jobs.value.map(j => j.id);
+  }
+}
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 

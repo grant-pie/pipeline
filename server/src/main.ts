@@ -1,3 +1,16 @@
+// TypeORM's schema synchronize runs parallel introspection queries via Promise.all()
+// on the same pg client, which pg 8.11+ flags as deprecated. This is a known TypeORM
+// upstream bug (PostgresQueryRunner.ts:1848). Suppress only this specific warning.
+process.on('warning', (warning) => {
+  if (
+    warning.name === 'DeprecationWarning' &&
+    warning.message.includes('client.query() when the client is already executing')
+  ) {
+    return;
+  }
+  console.warn(warning);
+});
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
