@@ -136,6 +136,11 @@ onUnmounted(() => observer?.disconnect());
 </script>
 
 <style scoped>
+/* Override the global .page max-width so 3 columns have room to breathe */
+.page {
+  max-width: 1200px;
+}
+
 .new-btn {
   display: inline-flex;
   align-items: center;
@@ -217,10 +222,18 @@ onUnmounted(() => observer?.disconnect());
 }
 
 .job-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
   transition: opacity 0.15s ease;
+}
+
+@media (max-width: 900px) {
+  .job-list { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .job-list { grid-template-columns: 1fr; }
 }
 
 .job-list--searching {
