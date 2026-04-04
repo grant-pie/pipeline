@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
@@ -87,6 +87,8 @@ const error = ref('');
 const passwordMatchError = ref('');
 const submitted = ref(false);
 const submittedEmail = ref('');
+
+watch(form, () => { error.value = ''; });
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 

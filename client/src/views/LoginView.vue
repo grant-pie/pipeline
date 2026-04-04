@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { authApi } from '@/api/auth';
@@ -73,6 +73,11 @@ const loading = ref(false);
 const error = ref('');
 const showResend = ref(false);
 const resendLoading = ref(false);
+
+watch(form, () => {
+  error.value = '';
+  showResend.value = false;
+});
 
 async function handleSubmit() {
   loading.value = true;
