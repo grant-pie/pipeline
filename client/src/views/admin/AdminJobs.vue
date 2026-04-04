@@ -1,8 +1,7 @@
 <template>
   <div>
     <div class="page-header">
-      <h1 class="page-title">Jobs</h1>
-      <span class="total-label" v-if="total > 0">{{ total }} total</span>
+      <h1 class="page-title mt-2vmt-md-0">Jobs</h1>
     </div>
 
     <div class="toolbar">
@@ -12,6 +11,7 @@
         class="search-input"
         placeholder="Search by, title or owner..."
       />
+      <div class="total-label" v-if="total > 0">{{ total }} total</div>
     </div>
 
     <div v-if="loading" class="state-msg">Loading…</div>
@@ -21,6 +21,7 @@
     <template v-else>
       <p v-if="actionError" class="action-error">{{ actionError }}</p>
 
+      <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
@@ -71,6 +72,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
 
       <div class="table-footer">
         <div class="pagination">
@@ -224,7 +226,11 @@ onMounted(load);
 
 .search-input:focus { border-color: var(--accent); }
 
-.total-label { font-size: 13px; color: var(--text-muted); }
+.total-label { 
+  font-size: 13px; 
+  color: var(--text-muted);
+  margin-top: 2rem;
+}
 
 .sortable {
   cursor: pointer;
@@ -245,6 +251,11 @@ onMounted(load);
   color: var(--danger);
   font-size: 13px;
   margin-bottom: 12px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {

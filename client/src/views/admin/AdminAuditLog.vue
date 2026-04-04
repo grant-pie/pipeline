@@ -2,7 +2,6 @@
   <div>
     <div class="page-header">
       <h1 class="page-title">Audit Log</h1>
-      <span class="total-label" v-if="total > 0">{{ total }} entries</span>
     </div>
 
     <div class="toolbar">
@@ -12,6 +11,7 @@
         class="search-input"
         placeholder="Search by admin email, action, target or detail…"
       />
+      <div class="total-label" v-if="total > 0">{{ total }} entries</div>
     </div>
 
     <div v-if="loading" class="state-msg">Loading…</div>
@@ -19,6 +19,7 @@
     <div v-else-if="entries.length === 0" class="state-msg">No audit log entries yet.</div>
 
     <template v-else>
+      <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
@@ -54,6 +55,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
 
       <div class="pagination">
         <button class="btn-ghost btn-sm" :disabled="page === 1" @click="prev">← Prev</button>
@@ -168,7 +170,11 @@ onMounted(load);
 </script>
 
 <style scoped>
-.total-label { font-size: 13px; color: var(--text-muted); }
+.total-label { 
+  font-size: 13px; 
+  color: var(--text-muted); 
+  margin-top: 2rem;
+}
 
 .toolbar { margin-bottom: 24px; }
 
@@ -199,6 +205,11 @@ onMounted(load);
   margin-left: 4px;
   font-size: 11px;
   opacity: 0.6;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {

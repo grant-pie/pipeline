@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="page-header">
-      <h1 class="page-title">Overview</h1>
+      <h1 class="page-title mt-2 mt-md-0">Overview</h1>
     </div>
 
     <div v-if="loading" class="state-msg">Loading…</div>
@@ -299,5 +299,14 @@ onMounted(async () => {
   font-size: 14px;
   padding: 60px 0;
   text-align: center;
+}
+
+.mt-3 {
+  margin-top: 15rem;
+}
+@media (min-width: 768px) { 
+    .mt-md-0{
+    margin-top: 0;
+  }
 }
 </style>

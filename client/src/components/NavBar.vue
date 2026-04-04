@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar">
+  <nav class="navbar" :class="{ 'is-admin': isOnAdminPages }">
     <RouterLink to="/dashboard" class="brand">Pipeline</RouterLink>
     <div class="nav-right">
       <span class="nav-email">{{ authStore.user?.email }}</span>
@@ -14,6 +14,9 @@
         <button class="btn-ghost btn-sm" @click="handleLogout">Sign out</button>
       </div>
     </div>
+    <button v-if="isOnAdminPages" class="hamburger" @click="drawerOpen = !drawerOpen" aria-label="Toggle menu">
+      <span /><span /><span />
+    </button>
   </nav>
 </template>
 
@@ -21,10 +24,12 @@
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useAdminNav } from '@/composables/useAdminNav';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const { drawerOpen } = useAdminNav();
 
 const isOnAdminPages = computed(() => route.path.startsWith('/admin'));
 
@@ -48,7 +53,7 @@ function handleLogout() {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: 200;
   box-sizing: border-box;
 }
 
@@ -96,6 +101,59 @@ function handleLogout() {
 
   :global(#app) {
     padding-top: var(--navbar-height-mobile, 80px);
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar.is-admin {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 16px;
+    gap: 2px;
+  }
+
+  .navbar.is-admin .hamburger {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .navbar.is-admin .nav-right {
+       justify-content: end;
+    order: 3;
+    flex-basis: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0 6px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+.hamburger {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 8px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .hamburger span {
+    display: block;
+    height: 2px;
+    background: var(--text);
+    border-radius: 2px;
   }
 }
 

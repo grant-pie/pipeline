@@ -8,7 +8,7 @@
     <div v-else-if="error" class="state-msg" style="color: var(--danger)">{{ error }}</div>
 
     <template v-else-if="user">
-      <div class="page-header">
+      <div class="page-header mt-0">
         <div>
           <h1 class="page-title">{{ user.email }}</h1>
           <div class="meta-row">
@@ -286,7 +286,10 @@ onMounted(load);
 </script>
 
 <style scoped>
-.back-row { margin-bottom: 24px; }
+.back-row { 
+  margin-bottom: 16px; 
+  margin-top: 24px;
+}
 
 .back-link {
   font-size: 13px;
@@ -419,5 +422,9 @@ onMounted(load);
   font-size: 14px;
   padding: 60px 0;
   text-align: center;
+}
+
+.mt-0 {
+  margin-top: 0!important;
 }
 </style>

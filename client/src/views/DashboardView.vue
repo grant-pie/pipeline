@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <div class="page-header">
+    <div class="page-header mt-3 mt-md-0">
       <h1 class="page-title">Applications</h1>
       <RouterLink to="/jobs/new" class="btn-primary btn-sm new-btn">
         + New application
@@ -272,4 +272,15 @@ onUnmounted(() => observer?.disconnect());
 .load-more-msg {
   padding: 20px 0;
 }
+
+.mt-3 {
+  margin-top: 2rem;
+}
+@media (min-width: 768px) { 
+    .mt-md-0{
+    margin-top: 0;
+  }
+}
+
+
 </style>

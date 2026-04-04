@@ -6,7 +6,6 @@
 
     <div class="page-header">
       <h1 class="page-title">Users</h1>
-      <span class="total-label" v-if="total > 0">{{ total }} total</span>
     </div>
 
     <div class="toolbar">
@@ -16,6 +15,7 @@
         class="search-input"
         placeholder="Search by email or user ID…"
       />
+      <div class="total-label" v-if="total > 0">{{ total }} total</div>
     </div>
 
     <div v-if="loading" class="state-msg">Loading…</div>
@@ -23,6 +23,7 @@
     <div v-else-if="users.length === 0" class="state-msg">No users found.</div>
 
     <template v-else>
+      <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
@@ -73,6 +74,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
 
       <div class="pagination">
         <button class="btn-ghost btn-sm" :disabled="page === 1" @click="prev">← Prev</button>
@@ -177,12 +179,22 @@ onMounted(load);
 
 .search-input:focus { border-color: var(--accent); }
 
-.total-label { font-size: 13px; color: var(--text-muted); }
+.total-label { 
+  font-size: 13px; 
+  color: var(--text-muted); 
+  margin-top: 2rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+
 }
 
 .data-table th {

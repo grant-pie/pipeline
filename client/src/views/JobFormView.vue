@@ -9,7 +9,7 @@
     </div>
 
     <template v-else>
-    <div class="page-header">
+    <div class="page-header mt-3 mt-md-0">
       <h1 class="page-title">{{ isEditing ? 'Edit application' : 'New application' }}</h1>
       <RouterLink to="/dashboard" class="btn-ghost btn-sm back-link">← Back</RouterLink>
     </div>
@@ -257,6 +257,16 @@ async function handleSubmit() {
 @media (max-width: 500px) {
   .form-row {
     grid-template-columns: 1fr;
+  }
+}
+
+.mt-3 {
+  margin-top: 2rem;
+}
+
+@media (min-width: 768px) { 
+    .mt-md-0{
+    margin-top: 0;
   }
 }
 </style>

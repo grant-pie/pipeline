@@ -254,12 +254,16 @@ onMounted(load);
 </script>
 
 <style scoped>
-.back-row { margin-bottom: 24px; }
+.back-row { 
+  margin-bottom: 24px;
+  margin-top: 2rem;
+ }
 
 .back-link {
   font-size: 13px;
   color: var(--text-muted);
   text-decoration: none;
+
 }
 
 .back-link:hover { color: var(--text); }
