@@ -34,7 +34,7 @@ describe('AdminUsers', () => {
     mockListUsers.mockResolvedValue(makeResponse());
     mount(AdminUsers, { global: { stubs } });
     await flushPromises();
-    expect(mockListUsers).toHaveBeenCalledWith(1, 20, undefined);
+    expect(mockListUsers).toHaveBeenCalledWith(1, 20, undefined, 'createdAt', 'DESC');
   });
 
   it('renders a loading indicator while the request is in flight', () => {
@@ -154,7 +154,7 @@ describe('AdminUsers', () => {
     const nextBtn = wrapper.findAll('button').find((b) => b.text().includes('Next'))!;
     await nextBtn.trigger('click');
     await flushPromises();
-    expect(mockListUsers).toHaveBeenCalledWith(2, 20, undefined);
+    expect(mockListUsers).toHaveBeenCalledWith(2, 20, undefined, 'createdAt', 'DESC');
   });
 
   it('clicking Prev decrements page and re-fetches', async () => {
@@ -193,7 +193,7 @@ describe('AdminUsers', () => {
     await wrapper.find('input[type="search"]').setValue('  alice  ');
     vi.advanceTimersByTime(300);
     await flushPromises();
-    expect(mockListUsers).toHaveBeenCalledWith(1, 20, 'alice');
+    expect(mockListUsers).toHaveBeenCalledWith(1, 20, 'alice', 'createdAt', 'DESC');
     vi.useRealTimers();
   });
 

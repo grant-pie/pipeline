@@ -3,9 +3,10 @@ import { mount, flushPromises } from '@vue/test-utils';
 import AdminDashboard from './AdminDashboard.vue';
 
 const mockGetStats = vi.hoisted(() => vi.fn());
+const mockGetCharts = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/admin', () => ({
-  adminApi: { getStats: mockGetStats },
+  adminApi: { getStats: mockGetStats, getCharts: mockGetCharts },
 }));
 
 const stubs = { RouterLink: { template: '<a><slot /></a>' } };
@@ -17,7 +18,10 @@ const makeStats = (overrides = {}) => ({
 });
 
 describe('AdminDashboard', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetCharts.mockResolvedValue(null);
+  });
 
   it('renders a loading indicator while the request is in flight', () => {
     mockGetStats.mockReturnValue(new Promise(() => {})); // never resolves

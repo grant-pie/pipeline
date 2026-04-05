@@ -1,14 +1,26 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import NavBar from './NavBar.vue';
 
 const mockPush = vi.fn();
 const mockLogout = vi.fn();
 let mockIsAdmin = false;
+let mockRoutePath = '/dashboard';
+
+const mockDrawerOpen = ref(false);
+
+vi.mock('@/composables/useAdminNav', () => ({
+  useAdminNav: () => ({ drawerOpen: mockDrawerOpen }),
+}));
 
 vi.mock('vue-router', async () => {
   const actual = await vi.importActual<typeof import('vue-router')>('vue-router');
-  return { ...actual, useRouter: () => ({ push: mockPush }) };
+  return {
+    ...actual,
+    useRoute: () => ({ path: mockRoutePath }),
+    useRouter: () => ({ push: mockPush }),
+  };
 });
 
 vi.mock('@/stores/auth', () => ({
@@ -27,6 +39,13 @@ const stubs = {
 };
 
 describe('NavBar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIsAdmin = false;
+    mockRoutePath = '/dashboard';
+    mockDrawerOpen.value = false;
+  });
+
   it("renders the authenticated user's email", () => {
     const wrapper = mount(NavBar, { global: { stubs } });
     expect(wrapper.text()).toContain('test@example.com');
@@ -56,11 +75,59 @@ describe('NavBar', () => {
     expect(wrapper.find('.admin-link').exists()).toBe(true);
   });
 
-  it('Admin link points to admin-dashboard route', () => {
+  it('Admin link points to admin-dashboard route when not on admin pages', () => {
     mockIsAdmin = true;
+    mockRoutePath = '/dashboard';
     const wrapper = mount(NavBar, { global: { stubs } });
-    // RouterLink stub renders to as href attribute
     const adminLink = wrapper.find('.admin-link');
     expect(adminLink.attributes('href')).toContain('admin-dashboard');
+  });
+
+  it('Admin link shows "Dashboard" text when already on admin pages', () => {
+    mockIsAdmin = true;
+    mockRoutePath = '/admin/users';
+    const wrapper = mount(NavBar, { global: { stubs } });
+    expect(wrapper.find('.admin-link').text()).toBe('Dashboard');
+  });
+
+  it('Admin link points to dashboard route when on admin pages', () => {
+    mockIsAdmin = true;
+    mockRoutePath = '/admin/users';
+    const wrapper = mount(NavBar, { global: { stubs } });
+    expect(wrapper.find('.admin-link').attributes('href')).toContain('dashboard');
+  });
+
+  it('applies is-admin class to navbar when on admin pages', () => {
+    mockRoutePath = '/admin/dashboard';
+    const wrapper = mount(NavBar, { global: { stubs } });
+    expect(wrapper.find('.navbar').classes()).toContain('is-admin');
+  });
+
+  it('does not apply is-admin class when not on admin pages', () => {
+    mockRoutePath = '/dashboard';
+    const wrapper = mount(NavBar, { global: { stubs } });
+    expect(wrapper.find('.navbar').classes()).not.toContain('is-admin');
+  });
+
+  it('renders hamburger button when on admin pages', () => {
+    mockRoutePath = '/admin/dashboard';
+    const wrapper = mount(NavBar, { global: { stubs } });
+    expect(wrapper.find('.hamburger').exists()).toBe(true);
+  });
+
+  it('does not render hamburger button when not on admin pages', () => {
+    mockRoutePath = '/dashboard';
+    const wrapper = mount(NavBar, { global: { stubs } });
+    expect(wrapper.find('.hamburger').exists()).toBe(false);
+  });
+
+  it('clicking hamburger toggles drawerOpen', async () => {
+    mockRoutePath = '/admin/dashboard';
+    mockDrawerOpen.value = false;
+    const wrapper = mount(NavBar, { global: { stubs } });
+    await wrapper.find('.hamburger').trigger('click');
+    expect(mockDrawerOpen.value).toBe(true);
+    await wrapper.find('.hamburger').trigger('click');
+    expect(mockDrawerOpen.value).toBe(false);
   });
 });
