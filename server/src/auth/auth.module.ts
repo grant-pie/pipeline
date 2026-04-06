@@ -1,3 +1,10 @@
+/**
+ * auth.module.ts — Authentication feature module.
+ *
+ * Configures JwtModule asynchronously using the validated JWT_SECRET and
+ * JWT_EXPIRES_IN env vars. Registers JwtStrategy as a Passport strategy and
+ * exports AuthService for use in other modules that need token validation.
+ */
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';

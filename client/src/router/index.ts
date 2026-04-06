@@ -1,3 +1,37 @@
+/**
+ * router/index.ts — Vue Router configuration and navigation guards.
+ *
+ * Defines all application routes and a global beforeEach guard that enforces
+ * three access rules:
+ *
+ *   requiresAuth  — Unauthenticated users are redirected to /login.
+ *   requiresAdmin — Non-admin users are redirected to /dashboard.
+ *   guest         — Already-authenticated users are redirected to /dashboard
+ *                   (prevents visiting /login or /register when signed in).
+ *
+ * All page components are lazy-loaded (dynamic import) so each route's bundle
+ * is only fetched when first visited.
+ *
+ * Route hierarchy:
+ *   /                       → redirect to /dashboard
+ *   /login                  → LoginView         (guest)
+ *   /register               → RegisterView      (guest)
+ *   /verify-email           → VerifyEmailView   (public)
+ *   /forgot-password        → ForgotPasswordView (public)
+ *   /reset-password         → ResetPasswordView  (public)
+ *   /dashboard              → DashboardView     (requiresAuth)
+ *   /jobs/new               → JobFormView       (requiresAuth)
+ *   /jobs/:id/edit          → JobFormView       (requiresAuth)
+ *   /admin/*                → AdminLayout       (requiresAuth + requiresAdmin)
+ *     ''                    → AdminDashboard
+ *     users                 → AdminUsers
+ *     users/:id             → AdminUserDetail
+ *     jobs                  → AdminJobs
+ *     jobs/:id              → AdminJobDetail
+ *     audit-log             → AdminAuditLog
+ *   /:pathMatch(.*)*        → NotFoundView      (404)
+ */
+
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
@@ -98,14 +132,25 @@ const router = createRouter({
   ],
 });
 
+/**
+ * Global navigation guard that enforces route-level access control.
+ * Runs before every route transition.
+ *
+ * @param to   - The target route being navigated to.
+ * @param _from - The current route being navigated away from (unused).
+ * @param next  - Callback to resolve the navigation (proceed, redirect, or abort).
+ */
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    // Unauthenticated user trying to access a protected route.
     next({ name: 'login' });
   } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    // Authenticated but non-admin user trying to access an admin route.
     next({ name: 'dashboard' });
   } else if (to.meta.guest && authStore.isAuthenticated) {
+    // Signed-in user navigating to a guest-only route (e.g. /login).
     next({ name: 'dashboard' });
   } else {
     next();

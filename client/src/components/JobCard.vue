@@ -31,6 +31,20 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * JobCard.vue — Reusable card component for a single job application.
+ *
+ * Displays the job title, company, application date, status badge,
+ * an optional link to the job posting, and optional notes (clamped to 3 lines).
+ * Provides Edit (RouterLink to the edit form) and Delete (emitted event) actions.
+ *
+ * Props:
+ *   job — The JobApplication record to render.
+ *
+ * Emits:
+ *   delete(id: string) — Fired when the user clicks Delete; passes the job ID
+ *                        up to the parent to handle confirmation and API call.
+ */
 import type { JobApplication } from '@/types';
 import { formatDate } from '@/utils/formatDate';
 

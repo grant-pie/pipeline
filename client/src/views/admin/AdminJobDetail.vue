@@ -151,6 +151,25 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * AdminJobDetail.vue — Admin job application detail and edit page.
+ *
+ * Loads a single job application by the ID in the route params and renders two
+ * views depending on the editing state:
+ *
+ *   Read view  — All fields displayed in a labelled grid. An Edit button
+ *                switches to the edit form.
+ *   Edit view  — Inline form with the same fields. Cancel reverts without
+ *                saving; Save changes calls the updateJob API and returns to
+ *                the read view on success.
+ *
+ * The owner's email is shown as a RouterLink to their admin user detail page.
+ * A Danger zone section provides a Delete button that permanently removes the
+ * job and redirects back to /admin/jobs.
+ *
+ * All mutating actions share the `busy` string ref as a mutex, and results are
+ * communicated via a self-dismissing message banner (showMsg, 4 s timeout).
+ */
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { adminApi, type AdminJob } from '@/api/admin';
@@ -178,6 +197,7 @@ interface Draft {
 
 const draft = ref<Draft>({ company: '', title: '', status: '', dateApplied: '', link: '', notes: '' });
 
+/** Fetches the job record from the API on mount. */
 async function load() {
   loading.value = true;
   error.value = '';
@@ -190,12 +210,22 @@ async function load() {
   }
 }
 
+/**
+ * Displays a feedback banner and auto-dismisses it after 4 seconds.
+ *
+ * @param msg  - The message text to display.
+ * @param type - 'success' (green) or 'error' (red). Defaults to 'success'.
+ */
 function showMsg(msg: string, type: 'success' | 'error' = 'success') {
   actionMsg.value = msg;
   actionMsgType.value = type;
   setTimeout(() => { actionMsg.value = ''; }, 4000);
 }
 
+/**
+ * Copies the current job's field values into the draft ref and switches to
+ * the edit form.
+ */
 function startEdit() {
   const j = job.value!;
   draft.value = {
@@ -209,10 +239,15 @@ function startEdit() {
   editing.value = true;
 }
 
+/** Discards the draft and returns to the read view without saving. */
 function cancelEdit() {
   editing.value = false;
 }
 
+/**
+ * Sends the current draft to the API and updates the displayed job on success.
+ * Trims all string fields before sending; empty link/notes are sent as undefined.
+ */
 async function saveEdit() {
   busy.value = 'save';
   try {
@@ -234,6 +269,10 @@ async function saveEdit() {
   }
 }
 
+/**
+ * Prompts for confirmation then permanently deletes the job and redirects to
+ * the jobs list. Shows an error banner if the request fails.
+ */
 async function deleteJob() {
   if (!confirm(`Permanently delete this ${job.value?.company} application?`)) return;
   busy.value = 'delete';
@@ -246,6 +285,12 @@ async function deleteJob() {
   }
 }
 
+/**
+ * Formats an ISO date string for display in the detail grid.
+ *
+ * @param iso - An ISO 8601 date string.
+ * @returns A formatted string such as "1 Jan 2026".
+ */
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }

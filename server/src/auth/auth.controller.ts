@@ -1,3 +1,13 @@
+/**
+ * auth.controller.ts — REST controller for /auth.
+ *
+ * Public routes (no JWT required). Per-route throttling is applied on top of
+ * the global 120 req/min limit:
+ *   register, login, reset-password — 5 req/min
+ *   resend-verification, forgot-password — 3 req/min
+ *
+ * All business logic is delegated to AuthService.
+ */
 import { Controller, Post, Body, Query, Get } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';

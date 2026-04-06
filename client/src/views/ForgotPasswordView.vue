@@ -40,6 +40,15 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * ForgotPasswordView.vue — Password reset request page.
+ *
+ * Presents a single email field. On submission it calls the forgot-password API
+ * endpoint which sends a reset link to the address if it belongs to a registered
+ * account. The response is always treated as a success (the API intentionally
+ * avoids revealing whether an email is registered) and the form is replaced by
+ * a confirmation message. Only actual network or server errors are surfaced.
+ */
 import { ref } from 'vue';
 import { authApi } from '@/api/auth';
 
@@ -48,6 +57,10 @@ const loading = ref(false);
 const error = ref('');
 const submitted = ref(false);
 
+/**
+ * Submits the email to the forgot-password API and switches to the success state.
+ * Network or server errors are displayed inline.
+ */
 async function handleSubmit() {
   loading.value = true;
   error.value = '';

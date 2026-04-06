@@ -1,3 +1,11 @@
+/**
+ * jobs.controller.ts — REST controller for /jobs.
+ *
+ * All routes require a valid JWT (enforced by JwtAuthGuard at the controller level).
+ * The authenticated user's ID is extracted from req.user.id and passed to
+ * JobsService on every call so that users can only access their own records.
+ * page and limit query parameters are clamped server-side (page ≥ 1, limit 1–100).
+ */
 import {
   Controller,
   Get,

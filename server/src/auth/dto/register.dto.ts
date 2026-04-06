@@ -1,3 +1,7 @@
+/**
+ * register.dto.ts — Request body for POST /auth/register.
+ * Validates that email is a valid address and password meets minimum length.
+ */
 import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength } from 'class-validator';
 
 export class RegisterDto {

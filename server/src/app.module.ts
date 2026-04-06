@@ -1,3 +1,12 @@
+/**
+ * app.module.ts — Root application module.
+ *
+ * Wires together all feature modules and configures global providers:
+ *   - ConfigModule (global env vars via @nestjs/config).
+ *   - ThrottlerModule (120 req/min global rate limit, applied via APP_GUARD).
+ *   - TypeOrmModule (PostgreSQL; schema sync disabled in production).
+ *   - AuthModule, JobsModule, UsersModule, AdminModule.
+ */
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';

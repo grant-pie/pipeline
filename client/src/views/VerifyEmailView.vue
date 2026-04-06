@@ -23,13 +23,30 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * VerifyEmailView.vue — Email address verification page.
+ *
+ * Automatically verifies the user's email on mount by extracting the token from
+ * the ?token= query parameter and calling the verify-email API. Renders one of
+ * three states based on the outcome:
+ *   - loading  — Shown immediately while the API call is in flight.
+ *   - success  — Token was valid; account is now active. Shows a sign-in link.
+ *   - error    — Token is missing, invalid, or already used. Shows an error message.
+ *
+ * There is no form — the entire flow is driven by the URL token from the email link.
+ */
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { authApi } from '@/api/auth';
 
 const route = useRoute();
+/** Drives the three conditional template blocks. Starts as 'loading'. */
 const state = ref<'loading' | 'success' | 'error'>('loading');
 
+/**
+ * On mount: reads the token from the query string and calls the verify-email
+ * endpoint. Sets state to 'success' or 'error' based on the result.
+ */
 onMounted(async () => {
   const token = route.query.token as string | undefined;
   if (!token) {

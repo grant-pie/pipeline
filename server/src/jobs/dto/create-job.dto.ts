@@ -1,3 +1,8 @@
+/**
+ * create-job.dto.ts — Request body for POST /jobs.
+ * Validates and sanitises all fields for a new job application.
+ * Company and title are trimmed via @Transform; notes/link are optional.
+ */
 import { IsString, IsIn, IsOptional, IsDateString, IsNotEmpty, IsUrl, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { JobStatus, JOB_STATUSES } from '../entities/job.entity';

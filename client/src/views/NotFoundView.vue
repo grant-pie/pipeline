@@ -1,3 +1,10 @@
+<!--
+  NotFoundView.vue — 404 page.
+
+  Displayed for any route that does not match a defined path (caught by the
+  wildcard route in the router). Shows a large 404 code and a link back to
+  /dashboard. Contains no script logic.
+-->
 <template>
   <div class="not-found-page">
     <p class="code">404</p>

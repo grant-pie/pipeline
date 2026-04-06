@@ -94,26 +94,50 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * AdminJobs.vue — Admin job application management table.
+ *
+ * Displays all job applications across all users in a sortable, searchable,
+ * paginated table. Each row shows the job owner's email, company, title, status
+ * pill, and date applied, with individual Delete and View links per row.
+ *
+ * Bulk delete:
+ *   - Checkbox column allows selecting individual rows or all rows via the
+ *     header checkbox (which also supports an indeterminate state).
+ *   - A bulk-actions bar appears above the pagination when any rows are selected,
+ *     showing the count and a "Delete selected" button.
+ *
+ * Other features: column sorting, 300 ms debounced search, page navigation.
+ */
 import { ref, computed, watch, onMounted } from 'vue';
 import { adminApi, type AdminJob } from '@/api/admin';
 
 const jobs = ref<AdminJob[]>([]);
 const loading = ref(true);
 const error = ref('');
+/** Error shown near the bulk-actions bar for delete failures. */
 const actionError = ref('');
 const page = ref(1);
 const hasMore = ref(false);
 const total = ref(0);
 const searchInput = ref('');
+/** Array of selected job UUIDs for bulk delete. */
 const selected = ref<string[]>([]);
+/** ID of the job currently being single-deleted (disables its Delete button). */
 const deleting = ref<string | null>(null);
 const bulkDeleting = ref(false);
 const sortBy = ref('createdAt');
 const sortOrder = ref<'ASC' | 'DESC'>('DESC');
 
+/** True when every job on the current page is checked. */
 const allSelected = computed(() => jobs.value.length > 0 && jobs.value.every(j => selected.value.includes(j.id)));
+/** True when at least one (but not all) jobs are checked — used for indeterminate checkbox state. */
 const someSelected = computed(() => selected.value.length > 0 && !allSelected.value);
 
+/**
+ * Toggles the select-all header checkbox.
+ * Deselects all if every row is checked; otherwise selects all rows.
+ */
 function toggleAll() {
   if (allSelected.value) {
     selected.value = [];
@@ -124,6 +148,10 @@ function toggleAll() {
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Fetches the current page of jobs from the API using the current search,
+ * sort, and page state. Clears the selection on every reload.
+ */
 async function load() {
   loading.value = true;
   error.value = '';
@@ -146,11 +174,17 @@ async function load() {
   }
 }
 
+// Debounce search input — resets to page 1 before fetching.
 watch(searchInput, () => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => { page.value = 1; load(); }, 300);
 });
 
+/**
+ * Handles a column header click for sorting.
+ *
+ * @param col - Column key to sort by (e.g. 'company', 'dateApplied').
+ */
 function setSort(col: string) {
   if (sortBy.value === col) {
     sortOrder.value = sortOrder.value === 'ASC' ? 'DESC' : 'ASC';
@@ -162,14 +196,28 @@ function setSort(col: string) {
   load();
 }
 
+/**
+ * Returns the sort indicator character for a column header.
+ *
+ * @param col - The column key to check.
+ * @returns '↑', '↓', or '↕'.
+ */
 function sortIcon(col: string) {
   if (sortBy.value !== col) return '↕';
   return sortOrder.value === 'ASC' ? '↑' : '↓';
 }
 
+/** Navigates to the previous page and reloads. */
 function prev() { page.value--; load(); }
+/** Navigates to the next page and reloads. */
 function next() { page.value++; load(); }
 
+/**
+ * Prompts for confirmation then deletes a single job. Removes the record from
+ * the local list optimistically on success.
+ *
+ * @param id - UUID of the job to delete.
+ */
 async function handleDelete(id: string) {
   if (!confirm('Delete this job?')) return;
   actionError.value = '';
@@ -185,6 +233,10 @@ async function handleDelete(id: string) {
   }
 }
 
+/**
+ * Prompts for confirmation then bulk-deletes all currently selected jobs.
+ * Removes deleted records from the local list and clears the selection on success.
+ */
 async function handleBulkDelete() {
   if (!confirm(`Delete ${selected.value.length} job(s)?`)) return;
   actionError.value = '';
@@ -202,6 +254,12 @@ async function handleBulkDelete() {
   }
 }
 
+/**
+ * Formats an ISO timestamp for display in the Date Applied column.
+ *
+ * @param iso - An ISO 8601 date string.
+ * @returns A formatted string such as "1 Jan 2026".
+ */
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }

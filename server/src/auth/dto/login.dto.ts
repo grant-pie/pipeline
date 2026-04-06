@@ -1,3 +1,7 @@
+/**
+ * login.dto.ts — Request body for POST /auth/login.
+ * Validates that email is a valid address and password is a non-empty string.
+ */
 import { IsEmail, IsString, IsNotEmpty, MaxLength } from 'class-validator';
 
 export class LoginDto {

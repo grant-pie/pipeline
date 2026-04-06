@@ -57,6 +57,18 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * LoginView.vue — User sign-in page.
+ *
+ * Renders a simple email + password form. On success the user is redirected to
+ * /dashboard. Handles two special cases:
+ *   - Session expiry: shows a warning banner when ?reason=expired is in the URL
+ *     (set by the HTTP client when a 401 is detected on a protected endpoint).
+ *   - Unverified account: when the server returns an error containing "verify
+ *     your email", a "Resend verification email" button is shown inline.
+ *
+ * Error state is cleared whenever the user modifies either form field.
+ */
 import { ref, reactive, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -66,6 +78,7 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
+/** True when the page was reached via a session-expiry redirect. */
 const sessionExpired = computed(() => route.query.reason === 'expired');
 
 const form = reactive({ email: '', password: '' });
@@ -74,15 +87,27 @@ const error = ref('');
 const showResend = ref(false);
 const resendLoading = ref(false);
 
+// Clear error state whenever the user edits the form.
 watch(form, () => {
   error.value = '';
   showResend.value = false;
 });
 
+/**
+ * Returns true if the string resembles a valid email address.
+ *
+ * @param email - The raw string to validate.
+ * @returns True when the string matches a basic email pattern.
+ */
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+/**
+ * Validates the form and submits login credentials to the auth store.
+ * Redirects to /dashboard on success, or shows an error message on failure.
+ * When the error indicates an unverified account, also shows the resend button.
+ */
 async function handleSubmit() {
   if (!isValidEmail(form.email)) {
     error.value = 'Please enter a valid email address.';
@@ -105,6 +130,10 @@ async function handleSubmit() {
   }
 }
 
+/**
+ * Re-sends the verification email to the address currently in the form.
+ * Updates the error message to confirm success or failure.
+ */
 async function handleResend() {
   resendLoading.value = true;
   try {

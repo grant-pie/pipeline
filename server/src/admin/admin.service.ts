@@ -1,3 +1,19 @@
+/**
+ * admin.service.ts — Admin business logic service.
+ *
+ * Implements all admin operations grouped into four areas:
+ *
+ *   Stats    — aggregate user and job counts for the dashboard overview.
+ *   Users    — paginated list, single fetch, role change, suspend/unsuspend,
+ *              delete, force-verify, resend-verification, trigger-password-reset.
+ *   Jobs     — paginated list (all users), single fetch, update, delete,
+ *              bulk delete.
+ *   Charts   — 12-month rolling time-series data for the three dashboard graphs.
+ *
+ * Every mutating operation accepts an AdminActor (id + email of the acting admin),
+ * applies a self-action guard where appropriate, and records the action in the
+ * audit log via AuditLogService.log().
+ */
 import {
   Injectable,
   NotFoundException,
@@ -15,10 +31,21 @@ import { MailService } from '../mail/mail.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { AuditAction } from '../audit-log/audit-log.entity';
 
+/**
+ * Returns the SHA-256 hex digest of a token string (mirrors the auth service utility).
+ * @param token - The raw token to hash.
+ */
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+/**
+ * Strips sensitive fields from a User record before it is sent to the client.
+ * Removes password hash, verification token, reset token, and reset token expiry.
+ *
+ * @param user - The full User entity from the database.
+ * @returns A safe copy of the user without credential fields.
+ */
 function sanitizeUser(user: User) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, verificationToken, resetToken, resetTokenExpiry, ...safe } = user;
@@ -42,6 +69,12 @@ export class AdminService {
 
   // ─── Stats ────────────────────────────────────────────────────────────────
 
+  /**
+   * Returns aggregate user and job statistics for the admin dashboard overview.
+   * Runs five COUNT queries and one grouped aggregate in parallel via Promise.all.
+   *
+   * @returns AdminStats with user totals and per-status job counts.
+   */
   async getStats() {
     const [totalUsers, verifiedUsers, suspendedUsers, adminUsers, totalJobs] = await Promise.all([
       this.usersRepo.count(),
@@ -77,6 +110,18 @@ export class AdminService {
 
   // ─── Users ────────────────────────────────────────────────────────────────
 
+  /**
+   * Returns a paginated list of all users with their job counts.
+   * jobCount sorting is handled in-memory because TypeORM mapped relation counts
+   * cannot be ordered at the database level.
+   *
+   * @param page      - 1-based page number.
+   * @param limit     - Records per page.
+   * @param search    - Optional ILIKE filter on email or user ID.
+   * @param sortBy    - Column to order by (whitelisted set; jobCount is in-memory).
+   * @param sortOrder - 'ASC' or 'DESC'.
+   * @returns Paginated sanitized user records.
+   */
   async listUsers(
     page: number,
     limit: number,
@@ -114,6 +159,13 @@ export class AdminService {
     return { data: data.map(sanitizeUser), total, hasMore: page * limit < total };
   }
 
+  /**
+   * Returns a single user with per-status job counts (applied, interviewing, offered, rejected).
+   *
+   * @param id - UUID of the user.
+   * @returns Sanitized user record with job count breakdowns.
+   * @throws NotFoundException if no user with the given ID exists.
+   */
   async getUser(id: string) {
     const user = await this.usersRepo
       .createQueryBuilder('user')
@@ -137,6 +189,15 @@ export class AdminService {
     return sanitizeUser(user);
   }
 
+  /**
+   * Changes a user's role. Admins cannot demote themselves.
+   *
+   * @param actor    - The admin performing the action.
+   * @param targetId - UUID of the user whose role is being changed.
+   * @param role     - The new role to assign.
+   * @throws ForbiddenException if the admin tries to demote themselves.
+   * @throws NotFoundException if the target user does not exist.
+   */
   async setRole(actor: AdminActor, targetId: string, role: UserRole) {
     if (actor.id === targetId && role !== UserRole.ADMIN) {
       throw new ForbiddenException('Admins cannot demote themselves');
@@ -158,6 +219,14 @@ export class AdminService {
     return { message: `User role updated to ${role}` };
   }
 
+  /**
+   * Suspends a user account, preventing login. Admins cannot suspend themselves.
+   *
+   * @param actor    - The admin performing the action.
+   * @param targetId - UUID of the user to suspend.
+   * @throws ForbiddenException if the admin targets themselves.
+   * @throws NotFoundException if the target user does not exist.
+   */
   async suspendUser(actor: AdminActor, targetId: string) {
     if (actor.id === targetId) {
       throw new ForbiddenException('Admins cannot suspend themselves');
@@ -179,6 +248,13 @@ export class AdminService {
     return { message: 'User suspended' };
   }
 
+  /**
+   * Lifts the suspension on a user account, restoring login access.
+   *
+   * @param actor    - The admin performing the action.
+   * @param targetId - UUID of the user to unsuspend.
+   * @throws NotFoundException if the target user does not exist.
+   */
   async unsuspendUser(actor: AdminActor, targetId: string) {
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
@@ -197,6 +273,15 @@ export class AdminService {
     return { message: 'User unsuspended' };
   }
 
+  /**
+   * Permanently deletes a user and all their job applications (via CASCADE).
+   * Admins cannot delete themselves.
+   *
+   * @param actor    - The admin performing the action.
+   * @param targetId - UUID of the user to delete.
+   * @throws ForbiddenException if the admin targets themselves.
+   * @throws NotFoundException if the target user does not exist.
+   */
   async deleteUser(actor: AdminActor, targetId: string) {
     if (actor.id === targetId) {
       throw new ForbiddenException('Admins cannot delete themselves');
@@ -218,6 +303,13 @@ export class AdminService {
     return { message: 'User deleted' };
   }
 
+  /**
+   * Marks a user's email as verified without requiring them to click an email link.
+   *
+   * @param actor    - The admin performing the action.
+   * @param targetId - UUID of the user to force-verify.
+   * @throws NotFoundException if the target user does not exist.
+   */
   async forceVerifyUser(actor: AdminActor, targetId: string) {
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
@@ -236,6 +328,14 @@ export class AdminService {
     return { message: 'User verified' };
   }
 
+  /**
+   * Generates a new verification token and sends a fresh verification email.
+   *
+   * @param actor    - The admin performing the action.
+   * @param targetId - UUID of the user to re-send the email to.
+   * @throws NotFoundException if the target user does not exist.
+   * @throws BadRequestException if the user is already verified.
+   */
   async resendVerification(actor: AdminActor, targetId: string) {
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
@@ -257,6 +357,14 @@ export class AdminService {
     return { message: 'Verification email sent' };
   }
 
+  /**
+   * Generates a password reset token (1-hour expiry) and sends a reset email on
+   * behalf of the admin.
+   *
+   * @param actor    - The admin performing the action.
+   * @param targetId - UUID of the user to send the reset email to.
+   * @throws NotFoundException if the target user does not exist.
+   */
   async triggerPasswordReset(actor: AdminActor, targetId: string) {
     const user = await this.usersService.findById(targetId);
     if (!user) throw new NotFoundException('User not found');
@@ -280,6 +388,18 @@ export class AdminService {
 
   // ─── Jobs ─────────────────────────────────────────────────────────────────
 
+  /**
+   * Returns a paginated list of all job applications across all users.
+   * Each record includes a trimmed user object (id + email only).
+   *
+   * @param page      - 1-based page number.
+   * @param limit     - Records per page.
+   * @param search    - Optional ILIKE filter on company, title, or owner email.
+   * @param userId    - Optional filter to restrict results to a single user's jobs.
+   * @param sortBy    - Column to order by (whitelisted set).
+   * @param sortOrder - 'ASC' or 'DESC'.
+   * @returns Paginated job records with trimmed user info.
+   */
   async listJobs(
     page: number,
     limit: number,
@@ -317,6 +437,13 @@ export class AdminService {
     };
   }
 
+  /**
+   * Fetches a single job application including its owner's id and email.
+   *
+   * @param id - UUID of the job.
+   * @returns The job record with a trimmed user object (or null if user was deleted).
+   * @throws NotFoundException if no job with the given ID exists.
+   */
   async getJob(id: string) {
     const job = await this.jobsRepo.findOne({ where: { id }, relations: ['user'] });
     if (!job) throw new NotFoundException('Job not found');
@@ -326,6 +453,16 @@ export class AdminService {
     };
   }
 
+  /**
+   * Updates any writable fields on a job application and records the change.
+   * Only fields explicitly present in dto are applied; undefined fields are ignored.
+   *
+   * @param actor - The admin performing the action.
+   * @param id    - UUID of the job to update.
+   * @param dto   - Partial UpdateJobDto with the fields to change.
+   * @returns The saved Job record.
+   * @throws NotFoundException if the job does not exist.
+   */
   async updateJob(actor: AdminActor, id: string, dto: UpdateJobDto) {
     const job = await this.jobsRepo.findOne({ where: { id } });
     if (!job) throw new NotFoundException('Job not found');
@@ -352,6 +489,13 @@ export class AdminService {
     return saved;
   }
 
+  /**
+   * Permanently deletes a single job application.
+   *
+   * @param actor - The admin performing the action.
+   * @param id    - UUID of the job to delete.
+   * @throws NotFoundException if the job does not exist.
+   */
   async deleteJob(actor: AdminActor, id: string) {
     const job = await this.jobsRepo.findOne({ where: { id } });
     if (!job) throw new NotFoundException('Job not found');
@@ -368,6 +512,14 @@ export class AdminService {
     });
   }
 
+  /**
+   * Permanently deletes multiple job applications in a single DELETE WHERE IN query.
+   *
+   * @param actor - The admin performing the action.
+   * @param ids   - Array of job UUIDs to delete.
+   * @returns A confirmation message with the count of deleted records.
+   * @throws BadRequestException if the ids array is empty.
+   */
   async bulkDeleteJobs(actor: AdminActor, ids: string[]) {
     if (!ids?.length) throw new BadRequestException('No job IDs provided');
 
@@ -386,6 +538,16 @@ export class AdminService {
 
   // ─── Charts ───────────────────────────────────────────────────────────────
 
+  /**
+   * Builds the chart datasets for the admin dashboard.
+   * Covers the rolling 12-month window ending this month.
+   *
+   *   userGrowth    — Cumulative user count per month (baseline + monthly deltas).
+   *   jobActivity   — New job applications per month broken down by status.
+   *   topCompanies  — Top 10 companies by total application count.
+   *
+   * @returns AdminCharts with labelled datasets ready for Chart.js.
+   */
   async getCharts() {
     const start = new Date();
     start.setMonth(start.getMonth() - 11);
@@ -452,6 +614,16 @@ export class AdminService {
 
   // ─── Audit Log ────────────────────────────────────────────────────────────
 
+  /**
+   * Delegates to AuditLogService.findAll — thin pass-through kept here so the
+   * controller only needs to depend on AdminService.
+   *
+   * @param page      - 1-based page number.
+   * @param limit     - Records per page.
+   * @param search    - Optional text filter.
+   * @param sortBy    - Column to order by.
+   * @param sortOrder - 'ASC' or 'DESC'.
+   */
   getAuditLog(page: number, limit: number, search?: string, sortBy?: string, sortOrder?: 'ASC' | 'DESC') {
     return this.auditLogService.findAll(page, limit, search, sortBy, sortOrder);
   }

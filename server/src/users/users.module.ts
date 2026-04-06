@@ -1,3 +1,9 @@
+/**
+ * users.module.ts — Users feature module.
+ *
+ * Provides UsersService (backed by the User TypeORM repository) and exports it
+ * so that AuthModule and AdminModule can use it without importing TypeORM directly.
+ */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersService } from './users.service';

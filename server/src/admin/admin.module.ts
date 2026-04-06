@@ -1,3 +1,10 @@
+/**
+ * admin.module.ts — Admin feature module.
+ *
+ * Registers direct TypeORM access to User and Job entities (needed for complex
+ * queries and chart aggregations), and wires in UsersModule, MailModule, and
+ * AuditLogModule as dependencies of AdminService.
+ */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';

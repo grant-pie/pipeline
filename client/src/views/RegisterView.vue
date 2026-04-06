@@ -74,6 +74,21 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * RegisterView.vue — New user registration page.
+ *
+ * Renders a three-field form (email, password, confirm password). After a
+ * successful API call the form is replaced by a success state prompting the
+ * user to check their inbox for a verification email.
+ *
+ * Password match is checked with a 300 ms debounce on every keystroke in the
+ * confirm field and again synchronously on submit, ensuring the error appears
+ * quickly without firing on every single character while still catching
+ * mismatches before the API call.
+ *
+ * The API error (e.g. duplicate email) is displayed separately from the
+ * password-match error and is cleared whenever the user edits any field.
+ */
 import { ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -86,12 +101,18 @@ const loading = ref(false);
 const error = ref('');
 const passwordMatchError = ref('');
 const submitted = ref(false);
+/** Stored separately so the success message can display it after the form clears. */
 const submittedEmail = ref('');
 
+// Clear the API error whenever the user modifies any field.
 watch(form, () => { error.value = ''; });
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Validates the confirm field against the password field with a 300 ms debounce.
+ * Called on every input event of the confirm field.
+ */
 function checkPasswordMatch() {
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
@@ -103,10 +124,21 @@ function checkPasswordMatch() {
   }, 300);
 }
 
+/**
+ * Returns true if the string resembles a valid email address.
+ *
+ * @param email - The raw string to validate.
+ * @returns True when the string matches a basic email pattern.
+ */
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+/**
+ * Validates both email format and password match, then calls the register API.
+ * On success switches the view to the confirmation state.
+ * On failure shows the server error message.
+ */
 async function handleSubmit() {
   if (!isValidEmail(form.email)) {
     error.value = 'Please enter a valid email address.';

@@ -1,5 +1,14 @@
+/**
+ * audit-log.entity.ts — TypeORM entity for the `audit_logs` table.
+ *
+ * Records every admin-initiated action for accountability. adminEmail is
+ * denormalised (copied at write time) so audit history is preserved even if
+ * the admin account is later deleted. metadata is stored as JSONB and carries
+ * action-specific context (email address, company/title, count, etc.).
+ */
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
+/** All recordable admin action types. */
 export enum AuditAction {
   SET_ROLE = 'SET_ROLE',
   SUSPEND_USER = 'SUSPEND_USER',

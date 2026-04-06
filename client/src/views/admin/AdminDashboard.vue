@@ -99,6 +99,22 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * AdminDashboard.vue — Admin overview statistics and charts.
+ *
+ * Loads user and job aggregate statistics (AdminStats) alongside chart datasets
+ * (AdminCharts) in a single Promise.all on mount. Renders:
+ *   - User stat cards: total, verified, suspended (red when > 0), admins.
+ *   - Job stat cards: total and per-status counts.
+ *   - Three Chart.js charts (via vue-chartjs):
+ *       1. User Growth       — line chart of cumulative users by month.
+ *       2. Job Activity      — stacked bar chart of job applications by month.
+ *       3. Top Companies     — horizontal bar chart of most-applied-to companies.
+ *   - Quick links to the Users, Jobs, and Audit Log admin pages.
+ *
+ * Charts are only rendered when chart data is available (v-if="charts"), so a
+ * partial failure (charts null) still allows the stat cards to display.
+ */
 import { ref, computed, onMounted } from 'vue';
 import {
   Chart as ChartJS,
@@ -145,7 +161,13 @@ const baseOptions = {
   },
 };
 
-// ─── Label formatter ──────────────────────────────────────────────────────────
+/**
+ * Converts an array of 'YYYY-MM' month strings to short display labels
+ * such as "Jan 26" for use as Chart.js x-axis tick labels.
+ *
+ * @param labels - Array of 'YYYY-MM' strings from the API chart data.
+ * @returns Array of formatted month strings.
+ */
 function formatMonths(labels: string[]) {
   return labels.map(m => {
     const [year, month] = m.split('-');
@@ -213,7 +235,10 @@ const horizontalBarOptions = {
   },
 };
 
-// ─── Load ─────────────────────────────────────────────────────────────────────
+/**
+ * On mount: fetches stats and chart data concurrently. If either call fails
+ * the error is shown and the stats/charts sections are hidden.
+ */
 onMounted(async () => {
   try {
     [stats.value, charts.value] = await Promise.all([

@@ -1,3 +1,11 @@
+/**
+ * user.entity.ts — TypeORM entity for the `users` table.
+ *
+ * Stores account credentials, role, verification/reset tokens, and suspension
+ * state. Sensitive token fields (verificationToken, resetToken, resetTokenExpiry)
+ * are stripped from API responses by AdminService.sanitizeUser before being sent
+ * to the client.
+ */
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,6 +15,7 @@ import {
 } from 'typeorm';
 import { Job } from '../../jobs/entities/job.entity';
 
+/** Role assigned to a user account. Controls access to the /admin/* routes. */
 export enum UserRole {
   USER = 'user',
   ADMIN = 'admin',

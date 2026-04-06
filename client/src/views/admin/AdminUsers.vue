@@ -86,6 +86,21 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * AdminUsers.vue — Admin user management table.
+ *
+ * Displays all registered users in a sortable, searchable, paginated table.
+ * Each row shows the user ID (truncated, click-to-copy), email, role badge,
+ * account status badge, job count, join date, and a View link to the detail page.
+ *
+ * Features:
+ *   - Column sorting: clicking a header toggles ASC/DESC; first click on a new
+ *     column always starts ASC. Default order is createdAt DESC.
+ *   - Search: 300 ms debounce on the email/ID search field; resets to page 1.
+ *   - Pagination: Prev/Next buttons with disabled states at boundaries.
+ *   - Copy ID: clicking the truncated user ID copies the full UUID to the
+ *     clipboard and shows a brief toast notification.
+ */
 import { ref, watch, onMounted } from 'vue';
 import { adminApi, type AdminUser } from '@/api/admin';
 
@@ -101,6 +116,10 @@ const sortOrder = ref<'ASC' | 'DESC'>('DESC');
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Fetches the current page of users from the API using the current search,
+ * sort, and page state, then updates the reactive data refs.
+ */
 async function load() {
   loading.value = true;
   error.value = '';
@@ -121,11 +140,18 @@ async function load() {
   }
 }
 
+// Debounce search input — resets to page 1 before fetching.
 watch(searchInput, () => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => { page.value = 1; load(); }, 300);
 });
 
+/**
+ * Handles a column header click: toggles direction when re-clicking the same
+ * column, otherwise switches to the new column with ASC order. Resets to page 1.
+ *
+ * @param col - The column key to sort by (e.g. 'email', 'createdAt').
+ */
 function setSort(col: string) {
   if (sortBy.value === col) {
     sortOrder.value = sortOrder.value === 'ASC' ? 'DESC' : 'ASC';
@@ -137,17 +163,30 @@ function setSort(col: string) {
   load();
 }
 
+/**
+ * Returns the sort direction indicator character for a column header.
+ *
+ * @param col - The column key to check.
+ * @returns '↑' (ASC), '↓' (DESC), or '↕' (not currently sorted).
+ */
 function sortIcon(col: string) {
   if (sortBy.value !== col) return '↕';
   return sortOrder.value === 'ASC' ? '↑' : '↓';
 }
 
+/** Navigates to the previous page and reloads. */
 function prev() { page.value--; load(); }
+/** Navigates to the next page and reloads. */
 function next() { page.value++; load(); }
 
 const toastVisible = ref(false);
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Copies a user ID to the clipboard and shows a 2-second toast notification.
+ *
+ * @param id - The full UUID string to copy.
+ */
 function copyId(id: string) {
   navigator.clipboard.writeText(id);
   if (toastTimer) clearTimeout(toastTimer);
@@ -155,6 +194,12 @@ function copyId(id: string) {
   toastTimer = setTimeout(() => { toastVisible.value = false; }, 2000);
 }
 
+/**
+ * Formats an ISO timestamp for display in the Joined column.
+ *
+ * @param iso - An ISO 8601 date string.
+ * @returns A formatted string such as "1 Jan 2026".
+ */
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }

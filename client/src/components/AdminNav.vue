@@ -41,6 +41,20 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * AdminNav.vue — Admin section sidebar navigation.
+ *
+ * Renders as a fixed left sidebar on desktop (220 px wide) and as a slide-in
+ * drawer on mobile. The drawer open/close state is shared with NavBar via the
+ * useAdminNav composable so the hamburger button in the top bar can control it.
+ *
+ * Active link highlighting is handled manually (active-class is cleared on each
+ * RouterLink) so that sub-routes such as admin-user-detail keep the parent
+ * "Users" link highlighted.
+ *
+ * A route-change watcher automatically closes the drawer on navigation, which
+ * is important on mobile where the drawer overlays the content.
+ */
 import { watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -51,8 +65,14 @@ const route = useRoute();
 const authStore = useAuthStore();
 const { drawerOpen } = useAdminNav();
 
+// Close the mobile drawer whenever the user navigates to a new route.
 watch(() => route.path, () => { drawerOpen.value = false; });
 
+/**
+ * Maps each top-level nav section to the route names that belong to it.
+ * A section is considered active if the current route name is in its list,
+ * which keeps detail-page routes highlighted under their parent section.
+ */
 const SECTION_ROUTES: Record<string, string[]> = {
   'admin-dashboard': ['admin-dashboard'],
   'admin-users':     ['admin-users', 'admin-user-detail'],
@@ -60,10 +80,19 @@ const SECTION_ROUTES: Record<string, string[]> = {
   'admin-audit-log': ['admin-audit-log'],
 };
 
+/**
+ * Returns true when the given section should be styled as active.
+ *
+ * @param section - The section key matching a key in SECTION_ROUTES.
+ * @returns True if the current route name belongs to this section.
+ */
 function isActive(section: string) {
   return SECTION_ROUTES[section]?.includes(route.name as string) ?? false;
 }
 
+/**
+ * Signs the admin out by clearing auth state then redirecting to the login page.
+ */
 function handleLogout() {
   authStore.logout();
   router.push({ name: 'login' });

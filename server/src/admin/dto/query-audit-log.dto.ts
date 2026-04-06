@@ -1,3 +1,8 @@
+/**
+ * query-audit-log.dto.ts — Query parameters for GET /admin/audit-log.
+ * All fields are optional. sortBy is whitelisted to the columns supported
+ * by AuditLogService.findAll.
+ */
 import { IsOptional, IsNumberString, IsString, IsIn } from 'class-validator';
 
 export class QueryAuditLogDto {

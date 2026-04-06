@@ -1,3 +1,8 @@
+/**
+ * query-jobs.dto.ts — Query parameters for GET /admin/jobs.
+ * All fields are optional. userId narrows results to a single user's jobs.
+ * sortBy is whitelisted to the columns supported by AdminService.listJobs.
+ */
 import { IsOptional, IsNumberString, IsString, IsUUID, IsIn } from 'class-validator';
 
 export class QueryJobsDto {

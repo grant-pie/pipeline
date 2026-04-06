@@ -1,3 +1,8 @@
+/**
+ * query-users.dto.ts — Query parameters for GET /admin/users.
+ * All fields are optional. sortBy is whitelisted to the columns supported
+ * by AdminService.listUsers (jobCount is sorted in-memory).
+ */
 import { IsOptional, IsNumberString, IsString, IsIn } from 'class-validator';
 
 export class QueryUsersDto {

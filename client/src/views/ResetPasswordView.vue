@@ -67,11 +67,24 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * ResetPasswordView.vue — Password reset completion page.
+ *
+ * Reads the one-time reset token from the ?token= URL query parameter and
+ * renders one of three states:
+ *   - Missing token: an error card with a link to request a new reset link.
+ *   - Form: two password fields with debounced match validation.
+ *   - Success: confirmation message with a link to /login.
+ *
+ * Password match is checked with 300 ms debounce on keystroke in the confirm
+ * field and validated synchronously again on submit.
+ */
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { authApi } from '@/api/auth';
 
 const route = useRoute();
+/** The one-time token from the ?token= query parameter, or undefined if absent. */
 const token = route.query.token as string | undefined;
 
 const password = ref('');
@@ -83,6 +96,10 @@ const submitted = ref(false);
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Validates the confirm field against the password field with a 300 ms debounce.
+ * Called on every input event of the confirm field.
+ */
 function checkPasswordMatch() {
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
@@ -94,6 +111,11 @@ function checkPasswordMatch() {
   }, 300);
 }
 
+/**
+ * Validates that the passwords match then submits the new password along with
+ * the URL token to the reset-password API. On success switches to the
+ * confirmation state; on failure shows the server error message.
+ */
 async function handleSubmit() {
   if (password.value !== confirm.value) {
     passwordMatchError.value = 'Passwords do not match.';

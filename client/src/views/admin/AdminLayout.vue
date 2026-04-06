@@ -8,6 +8,16 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * AdminLayout.vue — Admin section layout shell.
+ *
+ * Acts as the parent component for all /admin/* routes. Renders the AdminNav
+ * sidebar on the left and a main content area on the right where nested route
+ * components are mounted via RouterView.
+ *
+ * On mobile the layout switches from a side-by-side flex row to a column stack;
+ * the sidebar becomes a slide-in drawer controlled by the useAdminNav composable.
+ */
 import AdminNav from '@/components/AdminNav.vue';
 </script>
 

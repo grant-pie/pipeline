@@ -156,6 +156,23 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * AdminUserDetail.vue — Admin user detail and management page.
+ *
+ * Displays full information about a single user including their role, account
+ * status, job application counts, and join date. Provides five action cards:
+ *
+ *   Role        — Promote to admin / Demote to user (optimistic UI update).
+ *   Suspension  — Suspend / Unsuspend account (optimistic UI update).
+ *   Verification — Force verify (disabled if already verified) / Resend email.
+ *   Password reset — Trigger a reset email to the user's address.
+ *   Danger zone — Permanently delete the user and all their data.
+ *
+ * All actions use the `busy` string ref as a mutex — it holds the key of the
+ * action currently in flight and disables the corresponding button. On
+ * completion (success or error) a banner message is shown and auto-dismissed
+ * after 4 seconds via showMsg().
+ */
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { adminApi, type AdminUser } from '@/api/admin';
@@ -168,10 +185,12 @@ const id = route.params.id as string;
 const user = ref<AdminUser | null>(null);
 const loading = ref(true);
 const error = ref('');
+/** Key of the action currently being processed — used to disable buttons. */
 const busy = ref<string | null>(null);
 const actionMsg = ref('');
 const actionMsgType = ref<'success' | 'error'>('success');
 
+/** Fetches the user record from the API and populates the page. */
 async function load() {
   loading.value = true;
   error.value = '';
@@ -184,12 +203,24 @@ async function load() {
   }
 }
 
+/**
+ * Displays a feedback message in the action banner and auto-dismisses it after
+ * 4 seconds.
+ *
+ * @param msg  - The message text to display.
+ * @param type - 'success' (green) or 'error' (red). Defaults to 'success'.
+ */
 function showMsg(msg: string, type: 'success' | 'error' = 'success') {
   actionMsg.value = msg;
   actionMsgType.value = type;
   setTimeout(() => { actionMsg.value = ''; }, 4000);
 }
 
+/**
+ * Changes the user's role. Optimistically updates the local user object.
+ *
+ * @param role - The new role to assign ('admin' or 'user').
+ */
 async function setRole(role: UserRole) {
   busy.value = 'role';
   try {
@@ -203,6 +234,9 @@ async function setRole(role: UserRole) {
   }
 }
 
+/**
+ * Suspends the user account. Optimistically sets isSuspended = true on success.
+ */
 async function suspend() {
   busy.value = 'suspend';
   try {
@@ -216,6 +250,9 @@ async function suspend() {
   }
 }
 
+/**
+ * Lifts the suspension. Optimistically sets isSuspended = false on success.
+ */
 async function unsuspend() {
   busy.value = 'unsuspend';
   try {
@@ -229,6 +266,10 @@ async function unsuspend() {
   }
 }
 
+/**
+ * Force-verifies the user's email without requiring them to click a link.
+ * Optimistically sets isVerified = true, which also disables this button.
+ */
 async function forceVerify() {
   busy.value = 'verify';
   try {
@@ -242,6 +283,9 @@ async function forceVerify() {
   }
 }
 
+/**
+ * Re-sends the verification email to the user's registered address.
+ */
 async function resendVerification() {
   busy.value = 'resend';
   try {
@@ -254,6 +298,9 @@ async function resendVerification() {
   }
 }
 
+/**
+ * Sends a password reset email to the user on behalf of the admin.
+ */
 async function triggerPasswordReset() {
   busy.value = 'pwreset';
   try {
@@ -266,6 +313,10 @@ async function triggerPasswordReset() {
   }
 }
 
+/**
+ * Permanently deletes the user and all their job applications after confirmation.
+ * Redirects to the users list on success.
+ */
 async function deleteUser() {
   if (!confirm(`Permanently delete ${user.value?.email} and all their data?`)) return;
   busy.value = 'delete';

@@ -99,6 +99,26 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * JobFormView.vue — Create / Edit job application form.
+ *
+ * Shared by two routes:
+ *   /jobs/new        → Create mode  (isEditing = false, dateApplied defaults to today)
+ *   /jobs/:id/edit   → Edit mode    (isEditing = true, form pre-filled from cache or API)
+ *
+ * On mount in edit mode the component first checks the jobs store cache
+ * (getJob) to avoid a redundant API round-trip when navigating from the
+ * dashboard. If the job is not cached it fetches it directly; if the fetch
+ * fails (e.g. deleted) the not-found state is shown instead of the form.
+ *
+ * URL field handling:
+ *   - normalizeUrl() prepends https:// to bare hostnames before validation.
+ *   - The URL is then parsed with the native URL constructor to confirm it
+ *     has a valid http/https protocol and a hostname containing a dot.
+ *   - Empty URL input is omitted from the payload (sent as undefined).
+ *
+ * On success the user is redirected back to /dashboard.
+ */
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useJobsStore } from '@/stores/jobs';
@@ -110,12 +130,15 @@ const router = useRouter();
 const route = useRoute();
 const jobsStore = useJobsStore();
 
+/** True when the route contains an :id param (edit mode). */
 const isEditing = computed(() => !!route.params.id);
+/** The job UUID from the route param, or undefined in create mode. */
 const jobId = computed(() => route.params.id as string | undefined);
 
 const form = reactive({
   company: '',
   title: '',
+  /** Defaults to today's date in YYYY-MM-DD format for new applications. */
   dateApplied: new Date().toISOString().slice(0, 10),
   status: 'applied' as JobStatus,
   link: '',
@@ -124,12 +147,18 @@ const form = reactive({
 
 const loading = ref(false);
 const error = ref('');
+/** True when the job ID from the URL does not exist (shows not-found state). */
 const notFound = ref(false);
 
+/**
+ * On mount in edit mode: attempts to load the job from the store cache, falling
+ * back to a direct API call. Sets notFound = true if the job cannot be found.
+ * Pre-fills the form fields from the loaded job data.
+ */
 onMounted(async () => {
   if (!isEditing.value || !jobId.value) return;
 
-  // Try store cache first, fallback to API
+  // Try store cache first to avoid an unnecessary API call.
   let job = jobsStore.getJob(jobId.value);
   if (!job) {
     try {
@@ -148,12 +177,18 @@ onMounted(async () => {
   form.notes = job.notes ?? '';
 });
 
+/**
+ * Validates the URL field, builds the API payload, and calls create or update.
+ * Redirects to /dashboard on success; shows an error message on failure.
+ * Empty link and notes fields are omitted from the payload (sent as undefined).
+ */
 async function handleSubmit() {
   loading.value = true;
   error.value = '';
   try {
     const normalizedLink = normalizeUrl(form.link);
 
+    // Validate the URL if one was provided.
     if (normalizedLink) {
       try {
         const parsed = new URL(normalizedLink);

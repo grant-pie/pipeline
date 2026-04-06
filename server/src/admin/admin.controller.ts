@@ -1,3 +1,17 @@
+/**
+ * admin.controller.ts — REST controller for /admin.
+ *
+ * All routes require a valid JWT (JwtAuthGuard) AND the 'admin' role (RolesGuard
+ * + @Roles(UserRole.ADMIN)). The acting admin's id and email are read from
+ * req.user and forwarded to AdminService as an AdminActor on every mutating call.
+ *
+ * Route groups:
+ *   GET  /admin/stats              — Dashboard stats
+ *   GET  /admin/charts             — Dashboard chart data
+ *   GET  /admin/audit-log          — Paginated audit trail
+ *   GET/PATCH/DELETE /admin/users  — User management
+ *   GET/PATCH/DELETE /admin/jobs   — Job management
+ */
 import {
   Controller,
   Get,

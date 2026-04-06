@@ -21,6 +21,17 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * NavBar.vue — Top navigation bar shown to all authenticated users.
+ *
+ * Displays the Pipeline brand link, the current user's email, and a Sign out
+ * button. Admin users additionally see a toggle link between the Dashboard and
+ * the Admin section. On mobile, when the user is on an admin page, a hamburger
+ * button is rendered to open and close the AdminNav drawer.
+ *
+ * Applies the 'is-admin' CSS class to the nav element when on /admin/* routes
+ * so that the mobile admin layout can add a second row for the hamburger.
+ */
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -31,8 +42,15 @@ const route = useRoute();
 const authStore = useAuthStore();
 const { drawerOpen } = useAdminNav();
 
+/**
+ * True when the current route path begins with '/admin'.
+ * Controls the 'is-admin' class, admin-link text, and hamburger visibility.
+ */
 const isOnAdminPages = computed(() => route.path.startsWith('/admin'));
 
+/**
+ * Signs the user out by clearing auth state then redirecting to the login page.
+ */
 function handleLogout() {
   authStore.logout();
   router.push({ name: 'login' });

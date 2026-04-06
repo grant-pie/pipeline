@@ -1,3 +1,13 @@
+/**
+ * main.ts — Application entry point.
+ *
+ * Bootstraps the NestJS application with:
+ *   - Winston logger (console + rotating log files).
+ *   - CORS restricted to the configured CLIENT_URL.
+ *   - Global ValidationPipe (whitelist, forbidNonWhitelisted, transform).
+ *   - Listens on the PORT env var, defaulting to 3000.
+ */
+
 // TypeORM's schema synchronize runs parallel introspection queries via Promise.all()
 // on the same pg client, which pg 8.11+ flags as deprecated. This is a known TypeORM
 // upstream bug (PostgresQueryRunner.ts:1848). Suppress only this specific warning.
@@ -47,6 +57,9 @@ const logger = WinstonModule.createLogger({
   ],
 });
 
+/**
+ * Creates the NestJS application, applies global middleware, and starts the HTTP server.
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger });
 

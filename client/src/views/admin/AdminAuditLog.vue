@@ -67,6 +67,22 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * AdminAuditLog.vue — Admin audit trail viewer.
+ *
+ * Displays a paginated, searchable, sortable log of all admin actions. Each
+ * entry records which admin performed the action, what action was taken, the
+ * target entity type and ID, relevant metadata, and when it occurred.
+ *
+ * Action formatting:
+ *   - formatAction() maps raw action keys (e.g. SET_ROLE) to readable labels.
+ *   - actionClass() colour-codes actions: danger (destructive), warn (sensitive),
+ *     or neutral (informational).
+ *   - formatMeta() renders the metadata field into a short human-readable string:
+ *     email address, "Company — Title", or "N jobs".
+ *
+ * Target IDs are abbreviated (first 8 chars + …) to keep the table compact.
+ */
 import { ref, watch, onMounted } from 'vue';
 import { adminApi, type AuditLogEntry } from '@/api/admin';
 
@@ -82,6 +98,9 @@ const sortOrder = ref<'ASC' | 'DESC'>('DESC');
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Fetches the current page of audit log entries from the API.
+ */
 async function load() {
   loading.value = true;
   error.value = '';
@@ -107,9 +126,16 @@ watch(searchInput, () => {
   searchTimer = setTimeout(() => { page.value = 1; load(); }, 300);
 });
 
+/** Navigates to the previous page and reloads. */
 function prev() { page.value--; load(); }
+/** Navigates to the next page and reloads. */
 function next() { page.value++; load(); }
 
+/**
+ * Handles a column header click for sorting.
+ *
+ * @param col - Column key to sort by (e.g. 'createdAt', 'action').
+ */
 function setSort(col: string) {
   if (sortBy.value === col) {
     sortOrder.value = sortOrder.value === 'ASC' ? 'DESC' : 'ASC';
@@ -121,17 +147,30 @@ function setSort(col: string) {
   load();
 }
 
+/**
+ * Returns the sort indicator character for a column header.
+ *
+ * @param col - The column key to check.
+ * @returns '↑', '↓', or '↕'.
+ */
 function sortIcon(col: string) {
   if (sortBy.value !== col) return '↕';
   return sortOrder.value === 'ASC' ? '↑' : '↓';
 }
 
+/**
+ * Formats an ISO timestamp as "D Mon HH:MM" for the Time column.
+ *
+ * @param iso - An ISO 8601 date-time string.
+ * @returns A short date-time string such as "1 Jan 14:30".
+ */
 function formatDateTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) +
     ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
+/** Maps raw action key strings to display labels. */
 const ACTION_LABELS: Record<string, string> = {
   SET_ROLE: 'Set role',
   SUSPEND_USER: 'Suspended',
@@ -145,19 +184,40 @@ const ACTION_LABELS: Record<string, string> = {
   BULK_DELETE_JOBS: 'Bulk deleted jobs',
 };
 
+/**
+ * Converts a raw action key to its human-readable label.
+ *
+ * @param action - The raw action string from the API (e.g. 'SET_ROLE').
+ * @returns The display label, or the raw key if no mapping exists.
+ */
 function formatAction(action: string) {
   return ACTION_LABELS[action] ?? action;
 }
 
+/** Actions that are styled with the danger (red) colour. */
 const DANGER_ACTIONS = new Set(['DELETE_USER', 'DELETE_JOB', 'BULK_DELETE_JOBS', 'SUSPEND_USER']);
+/** Actions that are styled with the warning (amber) colour. */
 const WARN_ACTIONS  = new Set(['SET_ROLE', 'TRIGGER_PASSWORD_RESET']);
 
+/**
+ * Returns the CSS class to apply to an action tag based on its risk level.
+ *
+ * @param action - The raw action key.
+ * @returns 'action-danger', 'action-warn', or 'action-neutral'.
+ */
 function actionClass(action: string) {
   if (DANGER_ACTIONS.has(action)) return 'action-danger';
   if (WARN_ACTIONS.has(action)) return 'action-warn';
   return 'action-neutral';
 }
 
+/**
+ * Extracts a short human-readable detail string from an audit entry's metadata.
+ * Priority: email > company—title > count > dash.
+ *
+ * @param meta - The metadata object from the audit log entry, if present.
+ * @returns A short string such as "alice@example.com", "Acme — SWE", "3 jobs", or "—".
+ */
 function formatMeta(meta?: Record<string, unknown>) {
   if (!meta) return '—';
   if (meta.targetEmail) return String(meta.targetEmail);

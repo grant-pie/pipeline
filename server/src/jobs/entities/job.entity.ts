@@ -1,3 +1,10 @@
+/**
+ * job.entity.ts — TypeORM entity for the `jobs` table.
+ *
+ * Represents a single job application belonging to a user. The status column
+ * is a Postgres enum constrained to JOB_STATUSES. dateApplied is stored as a
+ * plain `date` (no time component). Cascades delete from the owning user.
+ */
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -9,7 +16,9 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
+/** Allowed status values for a job application. */
 export const JOB_STATUSES = ['applied', 'interviewing', 'offered', 'rejected'] as const;
+/** Union type derived from JOB_STATUSES for compile-time safety. */
 export type JobStatus = typeof JOB_STATUSES[number];
 
 @Entity('jobs')

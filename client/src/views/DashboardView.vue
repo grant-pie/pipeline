@@ -62,6 +62,24 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * DashboardView.vue — Main job applications listing page.
+ *
+ * Displays the authenticated user's job applications in a 3-column responsive
+ * grid (2 columns on tablet, 1 on mobile). Supports:
+ *   - Status filter pills (All / Applied / Interviewing / Offered / Rejected)
+ *     with per-status counts sourced from the jobs store.
+ *   - Full-text search with a 300 ms debounce; while the request is in flight
+ *     the grid fades to 50% opacity via the .job-list--searching class.
+ *   - Infinite scroll via an IntersectionObserver watching a sentinel element
+ *     at the bottom of the list (triggers 200 px before it enters the viewport).
+ *
+ * Filter and search changes are combined — changing the active filter while a
+ * search is active re-runs the search with the new status constraint.
+ *
+ * Delete is handled here (confirmation dialog + error state) rather than inside
+ * JobCard so the store call and error message live in one place.
+ */
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useJobsStore } from '@/stores/jobs';
 import JobCard from '@/components/JobCard.vue';
@@ -69,6 +87,7 @@ import type { JobStatus } from '@/types';
 
 const jobsStore = useJobsStore();
 
+/** Filter button definitions — value drives the API call, label is display text. */
 const statuses: { value: JobStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'applied', label: 'Applied' },
@@ -80,13 +99,21 @@ const statuses: { value: JobStatus | 'all'; label: string }[] = [
 const activeFilter = ref<JobStatus | 'all'>('all');
 const search = ref('');
 const deleteError = ref('');
+/** Ref bound to the sentinel div that triggers infinite scroll. */
 const sentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
+/**
+ * Returns the active status filter value to pass to the API, or undefined
+ * when 'all' is selected (the API treats undefined as no filter).
+ *
+ * @returns The active JobStatus, or undefined.
+ */
 function statusParam() {
   return activeFilter.value === 'all' ? undefined : activeFilter.value;
 }
 
+// Re-fetch or re-search when the status filter changes.
 watch(activeFilter, () => {
   if (search.value.trim()) {
     jobsStore.searchJobs(search.value.trim(), statusParam());
@@ -96,6 +123,9 @@ watch(activeFilter, () => {
 });
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Debounce search input: waits 300 ms after the user stops typing before
+// calling the API, avoiding a request on every keystroke.
 watch(search, (q) => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
@@ -107,7 +137,12 @@ watch(search, (q) => {
   }, 300);
 });
 
-
+/**
+ * Prompts the user for confirmation then deletes the job application.
+ * Displays an inline error if the delete API call fails.
+ *
+ * @param id - The UUID of the job application to delete.
+ */
 async function handleDelete(id: string) {
   if (!confirm('Delete this application?')) return;
   deleteError.value = '';
@@ -118,6 +153,11 @@ async function handleDelete(id: string) {
   }
 }
 
+/**
+ * On mount: loads the first page of jobs, then sets up an IntersectionObserver
+ * on the sentinel element. When the sentinel comes within 200 px of the viewport
+ * the next page is fetched and appended to the list (infinite scroll).
+ */
 onMounted(async () => {
   await jobsStore.fetchJobs();
 
@@ -133,6 +173,7 @@ onMounted(async () => {
   if (sentinel.value) observer.observe(sentinel.value);
 });
 
+/** Disconnect the IntersectionObserver when the component is destroyed. */
 onUnmounted(() => observer?.disconnect());
 </script>
 
