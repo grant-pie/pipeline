@@ -19,8 +19,8 @@
       <!-- Reset form -->
       <template v-else>
         <div class="auth-header">
-          <h1 class="auth-logo">Pipeline</h1>
-          <p class="auth-sub">Choose a new password for your account.</p>
+          <p class="auth-logo">Pipeline</p>
+          <h1 class="auth-title">Choose a new password</h1>
         </div>
 
         <form @submit.prevent="handleSubmit">
@@ -164,9 +164,11 @@ async function handleSubmit() {
   margin-bottom: 4px;
 }
 
-.auth-sub {
+.auth-title {
   font-size: 14px;
+  font-weight: 400;
   color: var(--text-muted);
+  margin: 0;
 }
 
 .submit-btn {

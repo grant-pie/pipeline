@@ -18,5 +18,7 @@ declare module 'vue-router' {
     requiresAdmin?: boolean;
     /** Redirect already-authenticated users to /dashboard when true. */
     guest?: boolean;
+    /** Page title shown in the browser tab (appended with "| Pipeline"). */
+    title?: string;
   }
 }

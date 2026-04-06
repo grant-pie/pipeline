@@ -3,8 +3,8 @@
     <div class="auth-card">
       <div class="auth-header">
         <RouterLink to="/login" class="back-link">← Back to sign in</RouterLink>
-        <h1 class="auth-logo">Pipeline</h1>
-        <p class="auth-sub">Enter your email and we'll send you a reset link.</p>
+        <p class="auth-logo">Pipeline</p>
+        <h1 class="auth-title">Reset your password</h1>
       </div>
 
       <form v-if="!submitted" @submit.prevent="handleSubmit">
@@ -117,9 +117,11 @@ async function handleSubmit() {
   margin-bottom: 4px;
 }
 
-.auth-sub {
+.auth-title {
   font-size: 14px;
+  font-weight: 400;
   color: var(--text-muted);
+  margin: 0;
 }
 
 .submit-btn {

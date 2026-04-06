@@ -2,8 +2,8 @@
   <div class="auth-page">
     <div class="auth-card">
       <div class="auth-header">
-        <h1 class="auth-logo">Pipeline</h1>
-        <p class="auth-sub">Sign in to your account</p>
+        <p class="auth-logo">Pipeline</p>
+        <h1 class="auth-title">Sign in to your account</h1>
       </div>
 
       <p v-if="sessionExpired" class="session-msg">Your session expired. Please sign in again.</p>
@@ -177,9 +177,11 @@ async function handleResend() {
   margin-bottom: 4px;
 }
 
-.auth-sub {
+.auth-title {
   font-size: 14px;
+  font-weight: 400;
   color: var(--text-muted);
+  margin: 0;
 }
 
 .label-row {
