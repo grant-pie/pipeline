@@ -228,6 +228,7 @@ const stackedBarOptions = {
 const horizontalBarOptions = {
   ...baseOptions,
   indexAxis: 'y' as const,
+  maintainAspectRatio: false,
   plugins: { ...baseOptions.plugins, legend: { display: false } },
   scales: {
     x: { ...baseOptions.scales.x, beginAtZero: true },
@@ -304,6 +305,7 @@ onMounted(async () => {
   border-radius: var(--radius-lg);
   padding: 20px 24px;
   height: 280px;
+  overflow: hidden;
 }
 
 .chart-card--short {
