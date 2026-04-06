@@ -37,7 +37,12 @@ import { AuditLog } from './audit-log/audit-log.entity';
       password: process.env.DB_PASSWORD || 'password',
       database: process.env.DB_NAME || 'pipeline',
       entities: [User, Job, AuditLog],
+      // synchronize is only enabled in non-production environments.
+      // In production, schema changes are applied via TypeORM migrations.
       synchronize: process.env.NODE_ENV !== 'production',
+      migrations: ['dist/migrations/*.js'],
+      migrationsRun: process.env.NODE_ENV === 'production',
+      migrationsTableName: 'typeorm_migrations',
     }),
     AuthModule,
     JobsModule,

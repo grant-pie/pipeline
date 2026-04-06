@@ -15,7 +15,10 @@
     "seed:audit-log": "ts-node -r dotenv/config -r tsconfig-paths/register src/seeds/audit-log.seed.ts",
     "seed:jobs": "ts-node -r dotenv/config -r tsconfig-paths/register src/seeds/jobs.seed.ts",
     "seed:admin": "ts-node -r dotenv/config -r tsconfig-paths/register src/seeds/admin.seed.ts",
-    "make-admin": "ts-node -r dotenv/config -r tsconfig-paths/register src/scripts/make-admin.ts"
+    "make-admin": "ts-node -r dotenv/config -r tsconfig-paths/register src/scripts/make-admin.ts",
+    "migration:generate": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/data-source.ts",
+    "migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/data-source.ts",
+    "migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/data-source.ts"
   },
   "dependencies": {
     "@faker-js/faker": "^10.4.0",
